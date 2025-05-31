@@ -34,6 +34,14 @@ public class UnitMover : MonoBehaviour
 
     public void StartMoving(List<MoveCell> moveCells)
     {
+        if (!Global.Instance.isDone)
+        {
+            Debug.Log("Другой юнит уже двигается. Жди.");
+            return; // нельзя начать новое движение
+        }
+
+        Global.Instance.isDone = false; // блокируем движение других юнитов
+
         if (!isMoving)
             StartCoroutine(MoveThroughCells(moveCells));
     }
@@ -61,6 +69,8 @@ public class UnitMover : MonoBehaviour
         }
 
         Debug.Log("Движение по списку завершено.");
+
+        Global.Instance.isDone = true;
 
         isMoving = false;
     }

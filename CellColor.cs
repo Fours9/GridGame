@@ -47,6 +47,12 @@ public class GridCellBehaviour : MonoBehaviour
             GameObject unit = GameObject.FindWithTag("Select");
             if (unit != null)
             {
+                UnitMover mover = unit.GetComponent<UnitMover>();
+                if (mover != null)
+                {
+                    mover.StopMoving();
+                }
+
                 Vector3 playerPos = unit.transform.position;
                 startCoords = Vector3Int.RoundToInt(playerPos);
 

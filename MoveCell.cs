@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 // Скрипт описывает логику клеток, по которым можно перемещаться в 3D пространстве (для A* или других алгоритмов).
 // Каждая клетка имеет координаты, ссылку на визуальный объект и свойства для определения проходимости.
@@ -25,4 +28,25 @@ public class MoveCell
         IsWalkable = isWalkable;  // Установка проходимости клетки
         MoveCost = moveCost; // Установка стоимости перемещения по клетке
     }
+}
+
+public class Global
+{
+    private static Global _instance;
+
+    public static Global Instance
+    {
+        get
+        {
+            if (_instance == null)
+                _instance = new Global();
+            return _instance;
+        }
+    }
+
+    // Переменная, доступная всем
+    public bool isDone = true;
+
+    // Закрытый конструктор, чтобы нельзя было создать ещё экземпляр
+    private Global() { }
 }
