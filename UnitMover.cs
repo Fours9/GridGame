@@ -12,6 +12,12 @@ public class UnitMover : MonoBehaviour
     private GameObject player;
     public float delayBetweenSteps = 0.1f;
 
+    private Coroutine moveCoroutine;
+
+    private bool shouldStop = false;
+
+    private MoveCell currentCell;
+
     void Update()
     {
         if (isMoving)  // проверка, движется ли юнит
@@ -20,6 +26,14 @@ public class UnitMover : MonoBehaviour
 
             if (Vector3.Distance(transform.position, targetPosition) < 0.01f) // проверка, достиг ли юнит цели
                 isMoving = false; // остановка движения, если цель достигнута
+        }
+
+        if (Input.GetMouseButtonDown(1)) // Правая кнопка мыши
+        {
+            if (isMoving == true && IsActiveUnit())
+            {
+                shouldStop = true;
+            }
         }
     }
 
@@ -30,6 +44,11 @@ public class UnitMover : MonoBehaviour
     public void SetAsActiveUnit()
     {
         player = GameObject.FindWithTag("Select");
+    }
+
+    public bool IsActiveUnit()
+    {
+        return player == this.gameObject;
     }
 
     public void StartMoving(List<MoveCell> moveCells)
@@ -43,7 +62,7 @@ public class UnitMover : MonoBehaviour
         Global.Instance.isDone = false; // блокируем движение других юнитов
 
         if (!isMoving)
-            StartCoroutine(MoveThroughCells(moveCells));
+            moveCoroutine = StartCoroutine(MoveThroughCells(moveCells));
     }
 
     IEnumerator MoveThroughCells(List<MoveCell> moveCells)
@@ -55,9 +74,23 @@ public class UnitMover : MonoBehaviour
         }
 
         isMoving = true;
+        shouldStop = false;
 
         foreach (var cell in moveCells)
         {
+            if (shouldStop)
+            {
+                Debug.Log("Движение остановлено перед клеткой: " + cell.Position);
+                break;
+            }
+            if (currentCell != null)
+            {
+                currentCell.SetOccupied(null); // освободить предыдущую клетку
+            }
+
+            currentCell = cell;
+            currentCell.SetOccupied(this.gameObject); // занять новую клетку
+
             MoveTo(cell.Position);
 
             while (Vector3.Distance(player.transform.position, cell.Position) > 0.01f)

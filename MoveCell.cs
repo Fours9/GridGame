@@ -1,7 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
+using static Main;
 
 // Скрипт описывает логику клеток, по которым можно перемещаться в 3D пространстве (для A* или других алгоритмов).
 // Каждая клетка имеет координаты, ссылку на визуальный объект и свойства для определения проходимости.
@@ -14,19 +15,56 @@ public class MoveCell
     public bool IsWalkable { get; set; }                  // Можно ли по этой клетке ходить
     public float MoveCost { get; set; }                   // Стоимость перемещения по этой клетке (может быть разной для разных типов клеток)
 
+    public Main.CellType undertype; // Тип клетки, определяемый в основном скрипте
+    public GameObject OccupyingUnit { get; private set; }
+
     // Параметры для алгоритма A*:
     public float GCost;                                   // Стоимость пути от начальной клетки до этой
     public float HCost;                                   // Оценка оставшегося расстояния до цели
     public float FCost => GCost + HCost;                  // Суммарная стоимость
     public MoveCell Parent;                               // Ссылка на предыдущую клетку (для восстановления пути)
 
+    [SerializeField]
+    private List<MonoBehaviour> rawEffects = new List<MonoBehaviour>(); // В инспекторе сюда добавляем эффекты
+
+    private List<ICellEffect> cellEffects = new List<ICellEffect>();
+
+    void Awake()
+    {
+        foreach (var effect in rawEffects)
+        {
+            if (effect is ICellEffect cellEffect)
+                cellEffects.Add(cellEffect);
+        }
+    }
+
+    public void SetOccupied(GameObject unit)
+    {
+        OccupyingUnit = unit;
+        IsWalkable = (unit == null);
+
+        if (unit != null)
+        {
+            ApplyEffectsTo(unit);
+        }
+    }
+
+    private void ApplyEffectsTo(GameObject unit)
+    {
+        foreach (var effect in cellEffects)
+        {
+            effect.ApplyEffect(unit);
+        }
+    }
+
     // Конструктор и инициализация
-    public MoveCell(int x, int y, int z, GameObject cellObject, bool isWalkable, float moveCost)  // Конструктор для инициализации клетки
+    public MoveCell(int x, int y, int z, GameObject cellObject, bool isWalkable, float moveCost, CellType undertype)  // Конструктор для инициализации клетки
     {
         Position = new Vector3Int(x, y, z); // Инициализация координат клетки
         CellObject = cellObject;  // Ссылка на визуальный объект клетки
         IsWalkable = isWalkable;  // Установка проходимости клетки
         MoveCost = moveCost; // Установка стоимости перемещения по клетке
+        this.undertype = undertype; // Установка типа клетки
     }
 }
 
