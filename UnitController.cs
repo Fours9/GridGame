@@ -3,19 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public enum TeamType { Player, Enemy }
+public enum TeamType
+{
+    Player,
+    Enemy,
+    Neutral
+}
+
 
 public class UnitController : MonoBehaviour
 {
     public TeamType team;
     public int health = 100;
     public int damage = 20;
+    public int Initiative = 10;
     public Vector3Int CurrentCell;
     private UnitMover unit;
 
     public void TakeDamage(int amount)
     {
         health -= amount;
+        Debug.Log($"{gameObject.name} получил урон. Осталось здоровья: {health}");
+
         if (health <= 0)
             Die();
     }

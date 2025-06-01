@@ -33,7 +33,7 @@ public class UnitSpawner : MonoBehaviour
         int sizeY = main.CellData.GetLength(1);
         int sizeZ = main.CellData.GetLength(2);
 
-        int startX = team == TeamType.Player ? 0 : sizeX - 1;
+        int startX = team == TeamType.Player ? 0 : sizeX - 1; //
 
         int spawned = 0;
 

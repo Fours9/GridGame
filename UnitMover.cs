@@ -16,6 +16,8 @@ public class UnitMover : MonoBehaviour
 
     private bool shouldStop = false;
 
+    private MoveCell currentCell;
+
     void Update()
     {
         if (isMoving)  // проверка, движется ли юнит
@@ -81,6 +83,13 @@ public class UnitMover : MonoBehaviour
                 Debug.Log("Движение остановлено перед клеткой: " + cell.Position);
                 break;
             }
+            if (currentCell != null)
+            {
+                currentCell.SetOccupied(null); // освободить предыдущую клетку
+            }
+
+            currentCell = cell;
+            currentCell.SetOccupied(this.gameObject); // занять новую клетку
 
             MoveTo(cell.Position);
 
