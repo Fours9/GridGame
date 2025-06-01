@@ -1,9 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class UnitSpawner : MonoBehaviour
 {
+    public List<Unit> unitData = new List<Unit>();
+
     public GameObject unitPrefab;
     public Main main;
 
@@ -12,6 +15,7 @@ public class UnitSpawner : MonoBehaviour
 
     void Start()
     {
+        unitData.Clear(); // Очистка списка юнитов перед началом
         StartCoroutine(SpawnWhenReady());
     }
 
@@ -45,9 +49,12 @@ public class UnitSpawner : MonoBehaviour
                 if (cell != null && cell.IsWalkable)
                 {
                     var unit = Instantiate(unitPrefab, cell.Position, Quaternion.identity);
-                    var controller = unit.GetComponent<UnitController>();
+                    var controller = unit.GetComponent<Unit>();
                     controller.team = team;
                     controller.CurrentCell = cell.Position;
+
+                    Unit units = new Unit(unit, false, cell);
+                    unitData.Add(units); // Добавляем юнит в список
 
                     unit.name = team + "_Unit_" + spawned;
                     spawned++;

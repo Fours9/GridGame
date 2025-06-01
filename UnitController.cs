@@ -3,29 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public enum TeamType
-{
-    Player,
-    Enemy,
-    Neutral
-}
-
 
 public class UnitController : MonoBehaviour
 {
-    public TeamType team;
-    public int health = 100;
-    public int damage = 20;
-    public int Initiative = 10;
-    public Vector3Int CurrentCell;
-    private UnitMover unit;
+    private Unit unitData;
 
     public void TakeDamage(int amount)
     {
-        health -= amount;
-        Debug.Log($"{gameObject.name} получил урон. Осталось здоровья: {health}");
+        unitData.health -= amount;
+        Debug.Log($"{gameObject.name} получил урон. Осталось здоровья: {unitData.health}");
 
-        if (health <= 0)
+        if (unitData.health <= 0)
             Die();
     }
 
@@ -61,5 +49,10 @@ public class UnitController : MonoBehaviour
         isSelected = false;
         rend.material.color = Color.white;
         gameObject.tag = "Untagged"; // 👉 Сбрасываем тег
+    }
+
+    public bool GetisSelect()
+    {
+        return isSelected;
     }
 }
