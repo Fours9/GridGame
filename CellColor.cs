@@ -47,12 +47,6 @@ public class GridCellBehaviour : MonoBehaviour
             GameObject unit = GameObject.FindWithTag("Select");
             if (unit != null)
             {
-                UnitMover mover = unit.GetComponent<UnitMover>();
-                if (mover != null)
-                {
-                    mover.StopMoving();
-                }
-
                 Vector3 playerPos = unit.transform.position;
                 startCoords = Vector3Int.RoundToInt(playerPos);
 
@@ -67,6 +61,12 @@ public class GridCellBehaviour : MonoBehaviour
                 if (pathfinder != null)
                 {
                     List<MoveCell> path = pathfinder.FindPath(startCoords, targetCoords, CellData);
+
+                    if (path == null || path.Count == 0)
+                    {
+                        Debug.LogWarning("Pathfinding returned no valid path.");
+                        return;
+                    }
 
                     for (int i = 0; i < path.Count; i++)
                     {

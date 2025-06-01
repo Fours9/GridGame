@@ -507,7 +507,7 @@ public class Main : MonoBehaviour
                         GameObject cellObj = Instantiate(gridCellPrefab, new Vector3(x, y, z), Quaternion.identity, transform);
 
                         // Создаём логическую клетку перемещения и добавляем в список доступных для пути
-                        MoveCell moveCell = new MoveCell(x, y, z, cellObj, true, 1);
+                        MoveCell moveCell = new MoveCell(x, y, z, cellObj, true, 1, below.type);
                         CellData[x, y, z] = moveCell; // Сохраняем ссылку на MoveCell в массиве CellData
                     }
                 }
