@@ -49,11 +49,11 @@ public class UnitSpawner : MonoBehaviour
                 if (cell != null && cell.IsWalkable)
                 {
                     var unit = Instantiate(unitPrefab, cell.Position, Quaternion.identity);
-                    var controller = unit.GetComponent<Unit>();
-                    controller.team = team;
-                    controller.CurrentCell = cell.Position;
+                    //var controller = unit.GetComponent<Unit>();
+                    //controller.team = team;
+                    //controller.CurrentCell = cell.Position;
 
-                    Unit units = new Unit(unit, false, cell);
+                    Unit units = new Unit(team ,unit, false, cell, unit.GetInstanceID());
                     unitData.Add(units); // Добавляем юнит в список
 
                     unit.name = team + "_Unit_" + spawned;

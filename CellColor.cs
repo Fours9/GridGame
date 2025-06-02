@@ -11,6 +11,8 @@ public class GridCellBehaviour : MonoBehaviour
     private Main main;
     private Vector3Int startCoords;
     //private bool isReady = false;
+    UnitSpawner unitSpawner;
+    private GameObject unit;
 
     public MoveCell[,,] CellData => main?.CellData;
 
@@ -21,6 +23,7 @@ public class GridCellBehaviour : MonoBehaviour
         originalColor = rend.material.color;
 
         main = FindAnyObjectByType<Main>(); // <- Добавьте это
+        unitSpawner = FindAnyObjectByType<UnitSpawner>();
     }
 
     void OnMouseEnter()
@@ -44,54 +47,64 @@ public class GridCellBehaviour : MonoBehaviour
         {
             rend.material.color = Color.green;
 
-            GameObject unit = GameObject.FindWithTag("Select");
-            if (unit != null)
+            //GameObject unit = GameObject.FindWithTag("Select");
+
+            foreach (Unit unitSelect in unitSpawner.unitData)
             {
-                Vector3 playerPos = unit.transform.position;
-                startCoords = Vector3Int.RoundToInt(playerPos);
-
-                Vector3Int targetCoords = Vector3Int.RoundToInt(transform.position);
-
-                if (main.CellData[targetCoords.x, targetCoords.y, targetCoords.z].IsWalkable)
+                if (unitSelect.IsSelected == true)
                 {
-                    Debug.Log($"Start: {startCoords}, Target: {targetCoords}");
+                    unit = unitSelect.UnitObject; // находим игрока по тегу "Select"
                 }
 
-                var pathfinder = FindAnyObjectByType<Pathfinding>();
-                if (pathfinder != null)
-                {
-                    List<MoveCell> path = pathfinder.FindPath(startCoords, targetCoords, CellData);
 
-                    if (path == null || path.Count == 0)
+                if (unit != null)
+                {
+                    Vector3 playerPos = unit.transform.position;
+                    startCoords = Vector3Int.RoundToInt(playerPos);
+
+                    Vector3Int targetCoords = Vector3Int.RoundToInt(transform.position);
+
+                    if (main.CellData[targetCoords.x, targetCoords.y, targetCoords.z].IsWalkable)
                     {
-                        Debug.LogWarning("Pathfinding returned no valid path.");
-                        return;
+                        Debug.Log($"Start: {startCoords}, Target: {targetCoords}");
                     }
 
-                    for (int i = 0; i < path.Count; i++)
+                    var pathfinder = FindAnyObjectByType<Pathfinding>();
+                    if (pathfinder != null)
                     {
-                        if (path[i] == null)
+                        List<MoveCell> path = pathfinder.FindPath(startCoords, targetCoords, CellData);
+
+                        if (path == null || path.Count == 0)
                         {
-                            Debug.LogWarning($"Null MoveCell found at index {i}. Stopping iteration.");
-                            break;
+                            Debug.LogWarning("Pathfinding returned no valid path.");
+                            return;
                         }
 
-                        Debug.Log($"MoveCell {i}: {path[i].Position}");
+                        for (int i = 0; i < path.Count; i++)
+                        {
+                            if (path[i] == null)
+                            {
+                                Debug.LogWarning($"Null MoveCell found at index {i}. Stopping iteration.");
+                                break;
+                            }
 
-                        UnitMover move = unit.GetComponent<UnitMover>();
-                        if (move != null)
-                        {
-                            move.StartMoving(path);
-                        }
-                        else
-                        {
-                            Debug.LogError("UnitMover component not found on unit.");
+                            Debug.Log($"MoveCell {i}: {path[i].Position}");
+
+                            UnitMover move = unit.GetComponent<UnitMover>();
+                            if (move != null)
+                            {
+                                move.StartMoving(path);
+                            }
+                            else
+                            {
+                                Debug.LogError("UnitMover component not found on unit.");
+                            }
                         }
                     }
-                }
-                else
-                {
-                    Debug.LogError("Pathfinding component not found.");
+                    else
+                    {
+                        Debug.LogError("Pathfinding component not found.");
+                    }
                 }
             }
         }
