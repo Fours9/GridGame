@@ -50,6 +50,29 @@ public class MoveCell
         }
     }
 
+    public void Highlight(Color color)
+    {
+        if (CellObject != null)
+        {
+            Renderer renderer = CellObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = color;
+            }
+        }
+    }
+
+    public void ClearHighlight(Color defaultColor)
+    {
+        if (CellObject != null)
+        {
+            Renderer renderer = CellObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = defaultColor;
+            }
+        }
+    }
 
     [SerializeField]
     private List<MonoBehaviour> rawEffects = new List<MonoBehaviour>(); // В инспекторе сюда добавляем эффекты

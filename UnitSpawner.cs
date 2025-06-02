@@ -53,7 +53,7 @@ public class UnitSpawner : MonoBehaviour
                     //controller.team = team;
                     //controller.CurrentCell = cell.Position;
 
-                    Unit units = new Unit(team ,unit, false, cell, unit.GetInstanceID());
+                    Unit units = new Unit(startX, y, z, team ,unit, false, cell, unit.GetInstanceID());
                     unitData.Add(units); // Добавляем юнит в список
 
                     unit.name = team + "_Unit_" + spawned;
