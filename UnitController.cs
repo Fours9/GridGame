@@ -1,12 +1,19 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
-using System;
+using static UnityEngine.GraphicsBuffer;
 
 
 public class UnitController : MonoBehaviour
 {
     private Unit unitData;
+
+    UnitSpawner unitSpawner;
+
+    public Vector3Int CurrentCell;
+    public TeamType team;
 
     public void TakeDamage(int amount)
     {
@@ -28,27 +35,23 @@ public class UnitController : MonoBehaviour
     public bool isSelected = false;
 
     private Renderer rend;
+    private Color originalColor;
 
     private void Start()
     {
         rend = GetComponent<Renderer>();
+        unitSpawner = FindAnyObjectByType<UnitSpawner>();
+        originalColor = rend.material.color;
     }
 
     public void Select()
     {
-        isSelected = true;
         rend.material.color = Color.green;
-        gameObject.tag = "Select"; // 👉 Устанавливаем тег
-
-        UnitMover mover = GetComponent<UnitMover>();
-        mover.SetAsActiveUnit();
     }
 
     public void Deselect()
     {
-        isSelected = false;
-        rend.material.color = Color.white;
-        gameObject.tag = "Untagged"; // 👉 Сбрасываем тег
+        rend.material.color = originalColor;
     }
 
     public bool GetisSelect()

@@ -17,6 +17,7 @@ public class UnitMover : MonoBehaviour
     private bool shouldStop = false;
 
     private MoveCell currentCell;
+    UnitSpawner unitSpawner;
 
     void Update()
     {
@@ -39,11 +40,19 @@ public class UnitMover : MonoBehaviour
 
     void Awake()
     {
-
+        unitSpawner = FindAnyObjectByType<UnitSpawner>();
     }
     public void SetAsActiveUnit()
     {
-        player = GameObject.FindWithTag("Select");
+        //player = GameObject.FindWithTag("Select");
+
+        foreach (Unit unit in unitSpawner.unitData)
+        {
+            if (unit.IsSelected == true)
+            {
+                player = unit.UnitObject; // находим игрока по тегу "Select"
+            }
+        }
     }
 
     public bool IsActiveUnit()

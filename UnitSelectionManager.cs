@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class UnitSelectionManager : MonoBehaviour
@@ -6,9 +7,17 @@ public class UnitSelectionManager : MonoBehaviour
 
     private UnitController selectedUnit;
 
+    UnitSpawner unitSpawner;
+
+    public UnitMover mover;  // Прив'яжи у інспекторі
+
+
     private void Awake()
     {
         Instance = this;
+        unitSpawner = FindAnyObjectByType<UnitSpawner>();
+
+        mover = FindFirstObjectByType<UnitMover>();  // Знайде перший у сцені
     }
 
     void Update()
@@ -26,23 +35,68 @@ public class UnitSelectionManager : MonoBehaviour
                 }
                 else
                 {
-                    selectedUnit.Deselect(); // Клик был НЕ по юниту
+                    SelectUnit(null); // Клик был НЕ по юниту
                 }
             }
             else
             {
-                selectedUnit.Deselect(); // Клик был в "пустоту"
+                SelectUnit(null); // Клик был в "пустоту"
             }
         }
     }
 
-    public void SelectUnit(UnitController unit)
+    public void SelectUnit(UnitController unitSelect)
     {
-        if (selectedUnit != null)
-            selectedUnit.Deselect();
+        if (unitSpawner == null)
+        {
+            Debug.LogError("UnitSpawner не знайдено!");
+            return;
+        }
 
-        selectedUnit = unit;
-        selectedUnit.Select();
+        // Скидаємо виділення у всіх юнітів
+        foreach (Unit unit in unitSpawner.unitData)
+        {
+            if (unit != null && unit.UnitObject != null)
+            {
+                unit.IsSelected = false;
+
+                // Отримуємо UnitController конкретного юніта
+                UnitController ctrl = unit.UnitObject.GetComponent<UnitController>();
+                if (ctrl != null)
+                {
+                    ctrl.Deselect();
+                }
+            }
+        }
+
+        selectedUnit = unitSelect;
+
+        if (unitSelect == null)
+            return;
+
+        foreach (Unit unit in unitSpawner.unitData)
+        {
+            if (unit != null && unit.UnitObject == unitSelect.gameObject)
+            {
+                unit.IsSelected = true;
+
+                UnitController ctrl = unitSelect.GetComponent<UnitController>();
+                if (ctrl != null)
+                {
+                    ctrl.Select();
+                }
+
+                UnitMover mover = unitSelect.GetComponent<UnitMover>();
+                if (mover != null)
+                {
+                    mover.SetAsActiveUnit();
+                }
+                else
+                {
+                    Debug.LogWarning("UnitMover не знайдено у вибраному юніті!");
+                }
+            }
+        }
     }
 
     public UnitController GetSelectedUnit()
