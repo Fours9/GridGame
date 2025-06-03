@@ -32,15 +32,18 @@ public class UnitSelectionManager : MonoBehaviour
                 if (unit != null && unit.isPlayerControlled)
                 {
                     SelectUnit(unit);
+                    ClearAllHighlights(); // —брасываем подсветку всех клеток
                 }
                 else
                 {
                     SelectUnit(null); //  лик был Ќ≈ по юниту
+                    ClearAllHighlights();
                 }
             }
             else
             {
                 SelectUnit(null); //  лик был в "пустоту"
+                ClearAllHighlights();
             }
         }
     }
@@ -51,6 +54,26 @@ public class UnitSelectionManager : MonoBehaviour
         {
             Debug.LogError("UnitSpawner не знайдено!");
             return;
+        }
+
+        // 1. —Ѕ–ј—џ¬ј≈ћ ѕќƒ—¬≈“ ”
+        ClearAllHighlights();
+
+        if (unitSelect != null)
+        {
+            var unitData = unitSelect.unitData;
+            var main = FindAnyObjectByType<Main>(); // или ссылка на Main, если есть
+            var startCell = main.CellData[unitData.CurrentCell.x, unitData.CurrentCell.y, unitData.CurrentCell.z];
+            int steps = unitData.RemainingMovement;
+            var reachable = MovementHelper.GetReachableCells(startCell, main.CellData, steps);
+
+            main.HighlightReachableCells(reachable);
+        }
+        else
+        {
+            // ≈сли юнит не выбран Ч сбросить подсветку
+            var main = FindAnyObjectByType<Main>();
+            main.HighlightReachableCells(null);
         }
 
         // —кидаЇмо вид≥ленн€ у вс≥х юн≥т≥в
@@ -95,6 +118,10 @@ public class UnitSelectionManager : MonoBehaviour
                 {
                     Debug.LogWarning("UnitMover не знайдено у вибраному юн≥т≥!");
                 }
+
+                // 2. ѕќƒ—¬≈“ ј ƒќ—“”ѕЌџ’  Ћ≈“ќ  ƒЋя ’ќƒј:
+                ShowAvailableMoves(unit);
+
             }
         }
     }
@@ -102,5 +129,38 @@ public class UnitSelectionManager : MonoBehaviour
     public UnitController GetSelectedUnit()
     {
         return selectedUnit;
+    }
+
+    public void ShowAvailableMoves(Unit unit)
+    {
+        // ѕолучи Main из сцены, если надо Ч через FindObjectOfType<Main>();
+        Main main = FindObjectOfType<Main>();
+        if (main == null) return;
+
+        if (unit == null || unit.undercell == null)
+            return;
+
+        int movesLeft = unit.RemainingMovement;
+
+        // »щем все достижимые клетки BFS-ом
+        var reachableCells = MovementHelper.GetReachableCells(unit.undercell, main.CellData, movesLeft);
+
+        foreach (var cell in reachableCells)
+            cell.Highlight(Color.blue);
+    }
+
+    public void ClearAllHighlights()
+    {
+        Main main = FindAnyObjectByType<Main>();
+        if (main == null) return;
+        foreach (var cell in main.CellData)
+        {
+            if (cell != null && cell.CellObject != null)
+            {
+                var gridCellBehaviour = cell.CellObject.GetComponent<GridCellBehaviour>();
+                if (gridCellBehaviour != null)
+                    gridCellBehaviour.ResetColor();
+            }
+        }
     }
 }

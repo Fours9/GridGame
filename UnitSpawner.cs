@@ -1,4 +1,4 @@
-using System.Collections;
+п»їusing System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -15,7 +15,7 @@ public class UnitSpawner : MonoBehaviour
 
     void Start()
     {
-        unitData.Clear(); // Очистка списка юнитов перед началом
+        unitData.Clear(); // РћС‡РёСЃС‚РєР° СЃРїРёСЃРєР° СЋРЅРёС‚РѕРІ РїРµСЂРµРґ РЅР°С‡Р°Р»РѕРј
         StartCoroutine(SpawnWhenReady());
     }
 
@@ -49,12 +49,21 @@ public class UnitSpawner : MonoBehaviour
                 if (cell != null && cell.IsWalkable)
                 {
                     var unit = Instantiate(unitPrefab, cell.Position, Quaternion.identity);
-                    //var controller = unit.GetComponent<Unit>();
-                    //controller.team = team;
-                    //controller.CurrentCell = cell.Position;
 
-                    Unit units = new Unit(startX, y, z, team ,unit, false, cell, unit.GetInstanceID());
-                    unitData.Add(units); // Добавляем юнит в список
+                    // --- РћРўРњР•Р§РђР•Рњ РљР›Р•РўРљРЈ РљРђРљ Р—РђРќРЇРўРЈР® ---
+                    cell.SetOccupied(unit);
+
+                    Unit units = new Unit(startX, y, z, team, unit, false, cell, unit.GetInstanceID());
+                    unitData.Add(units);
+
+                    var controller = unit.GetComponent<UnitController>();
+                    if (controller != null)
+                    {
+                        controller.unitData = units;
+                        Debug.Log($"Spawned Unit: name={unit.name}, instanceID={unit.GetInstanceID()}, dataID={units.GetHashCode()}, controllerID={controller.GetInstanceID()}");
+                    }
+                    else
+                        Debug.LogError("UnitController РЅРµ РЅР°Р№РґРµРЅ РЅР° РїСЂРµС„Р°Р±Рµ СЋРЅРёС‚Р°!");
 
                     unit.name = team + "_Unit_" + spawned;
                     spawned++;

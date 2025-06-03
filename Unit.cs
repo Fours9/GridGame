@@ -31,11 +31,13 @@ public class Unit
     public int movementPoints = 5;  // Количество очков движения, которые юнит может использовать за ход
     public int stepsUsed = 0;  // Количество шагов, использованных юнитом в текущем ходе
 
+    public bool canMove => RemainingMovement > 0; // Автоматически вычисляется
+
     public int RemainingMovement => movementPoints - stepsUsed;  // Свойство для получения оставшихся очков движения
 
     List<Item> Inventory; // Список предметов, которые юнит может использовать или носить с собой   
 
-    public GameObject UnitObject { get; private set; }
+    public GameObject UnitObject { get; set; }
 
     public MoveCell undercell; // Тип клетки, определяемый в основном скрипте
 

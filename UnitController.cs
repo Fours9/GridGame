@@ -8,7 +8,7 @@ using static UnityEngine.GraphicsBuffer;
 
 public class UnitController : MonoBehaviour
 {
-    private Unit unitData;
+    public Unit unitData;
 
     UnitSpawner unitSpawner;
 

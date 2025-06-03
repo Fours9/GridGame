@@ -7,6 +7,10 @@ using UnityEngine;
 // Скрипт отвечает за генерацию воксельной карты с ландшафтом, пещерами, дорогами и сохранением данных по каждому блоку.
 public class Main : MonoBehaviour
 {
+
+    public List<GridCellBehaviour> allCells = new List<GridCellBehaviour>();
+
+
     // Размер карты по ширине и высоте
     public int width = 32;
     public int height = 32;
@@ -509,6 +513,13 @@ public class Main : MonoBehaviour
                         // Создаём логическую клетку перемещения и добавляем в список доступных для пути
                         MoveCell moveCell = new MoveCell(x, y, z, cellObj, true, 1, below.type, null);
                         CellData[x, y, z] = moveCell; // Сохраняем ссылку на MoveCell в массиве CellData
+
+                        // --- Добавь вот это: ---
+                        GridCellBehaviour gridCell = cellObj.GetComponent<GridCellBehaviour>();
+                        if (gridCell != null)
+                        {
+                            allCells.Add(gridCell);
+                        }
                     }
                 }
             }
@@ -532,5 +543,31 @@ public class Main : MonoBehaviour
 
         // Также очищаем вспомогательные структуры
         CellData = new MoveCell[width, mapHeight, height]; // Можно оставить нули
+    }
+
+    public void HighlightReachableCells(List<MoveCell> cells)
+    {
+        // 1. Сбросить у всех GridCellBehaviour (не белый, а исходный цвет!)
+        foreach (var cell in CellData)
+        {
+            if (cell != null && cell.CellObject != null)
+            {
+                var behaviour = cell.CellObject.GetComponent<GridCellBehaviour>();
+                if (behaviour != null)
+                    behaviour.SetReachableHighlight(false);
+            }
+        }
+
+        // 2. Теперь отметить доступные как reachable
+        if (cells == null) return;
+        foreach (var cell in cells)
+        {
+            if (cell != null && cell.CellObject != null)
+            {
+                var behaviour = cell.CellObject.GetComponent<GridCellBehaviour>();
+                if (behaviour != null)
+                    behaviour.SetReachableHighlight(true);
+            }
+        }
     }
 }
