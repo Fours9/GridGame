@@ -12,12 +12,12 @@ using static Main;
 public class MoveCell
 {
     public Vector3Int Position { get; private set; }      // Координаты клетки
-    public GameObject CellObject { get; private set; }    // Ссылка на визуальный объект клетки
+    public GameObject CellObject { get; set; }    // Ссылка на визуальный объект клетки
     public bool IsWalkable { get; set; }                  // Можно ли по этой клетке ходить
     public float MoveCost { get; set; }                   // Стоимость перемещения по этой клетке (может быть разной для разных типов клеток)
 
     public Main.CellType undertype; // Тип клетки, определяемый в основном скрипте
-    public GameObject OccupyingUnit { get; private set; }
+    public GameObject OccupyingUnit { get; set; }
 
     // Параметры для алгоритма A*:
     public float GCost;                                   // Стоимость пути от начальной клетки до этой
@@ -50,6 +50,27 @@ public class MoveCell
         }
     }
 
+    public void Highlight(Color color)
+    {
+        if (CellObject != null)
+        {
+            Renderer renderer = CellObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = color;
+            }
+        }
+    }
+
+    public void ClearHighlight()
+    {
+        if (CellObject != null)
+        {
+            var beh = CellObject.GetComponent<GridCellBehaviour>();
+            if (beh != null)
+                beh.ResetColor(); // <- этот метод уже есть!
+        }
+    }
 
     [SerializeField]
     private List<MonoBehaviour> rawEffects = new List<MonoBehaviour>(); // В инспекторе сюда добавляем эффекты

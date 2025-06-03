@@ -17,6 +17,11 @@ public class Pathfinding : MonoBehaviour
         MoveCell startCell = CellData[startCoords.x, startCoords.y, startCoords.z];
         MoveCell targetCell = CellData[targetCoords.x, targetCoords.y, targetCoords.z];
 
+        if (CellData[startCoords.x, startCoords.y, startCoords.z] == null)
+            Debug.LogError("Start координаты не содержат MoveCell!");
+        if (CellData[targetCoords.x, targetCoords.y, targetCoords.z] == null)
+            Debug.LogError("Target координаты не содержат MoveCell!");
+
         // Відкритий список (клітинки, які ще не перевірені)
         List<MoveCell> openSet = new List<MoveCell>();
         // Закритий список (вже перевірені клітинки)
@@ -47,6 +52,8 @@ public class Pathfinding : MonoBehaviour
             // Якщо досягли цільової клітинки — будуємо шлях
             if (current == targetCell)
                 return ReconstructPath(cameFrom, current);
+
+
 
             openSet.Remove(current);
             closedSet.Add(current);
@@ -86,10 +93,11 @@ public class Pathfinding : MonoBehaviour
         while (cameFrom.ContainsKey(current))
         {
             current = cameFrom[current];
-            totalPath.Insert(0, current); // Додаємо на початок
+            if (current == null) break;
+            totalPath.Insert(0, current);
         }
 
-        return totalPath;
+        return totalPath.FindAll(cell => cell != null);
     }
 
     /// <summary>
@@ -107,7 +115,7 @@ public class Pathfinding : MonoBehaviour
     /// Отримати сусідів, доступних для переміщення.
     /// Забороняє рух по діагоналі в площині XZ, дозволяючи рух по Y.
     /// </summary>
-    private static List<MoveCell> GetNeighbors(MoveCell cell, MoveCell[,,] CellData)
+    internal static List<MoveCell> GetNeighbors(MoveCell cell, MoveCell[,,] CellData)
     {
         List<MoveCell> neighbors = new List<MoveCell>();
 
@@ -117,13 +125,7 @@ public class Pathfinding : MonoBehaviour
             {
                 for (int dz = -1; dz <= 1; dz++)
                 {
-                    // Пропустити саму клітинку
                     if (dx == 0 && dy == 0 && dz == 0)
-                        continue;
-
-                    // Забороняємо діагональні переміщення в площині XZ (але дозволяємо по осі Y)
-                    int horizontalMoveCount = Mathf.Abs(dx) + Mathf.Abs(dz);
-                    if (horizontalMoveCount > 1 && dy == 0)
                         continue;
 
                     Vector3Int neighborPos = new Vector3Int(
@@ -132,12 +134,28 @@ public class Pathfinding : MonoBehaviour
                         cell.Position.z + dz
                     );
 
-                    if (IsValid(neighborPos, CellData))
+                    if (!IsValid(neighborPos, CellData))
+                        continue;
+
+                    MoveCell neighbor = CellData[neighborPos.x, neighborPos.y, neighborPos.z];
+                    if (neighbor == null || !neighbor.IsWalkable || neighbor.OccupyingUnit != null)
+                        continue;
+
+                    // --- Строгое ограничение на диагонали по XZ-слою ---
+                    if (dx != 0 && dz != 0 && dy == 0)
                     {
-                        MoveCell neighbor = CellData[neighborPos.x, neighborPos.y, neighborPos.z];
-                        if (neighbor != null && neighbor.IsWalkable)
-                            neighbors.Add(neighbor);
+                        // Оба прямых соседа ДОЛЖНЫ быть проходимы и не заняты
+                        Vector3Int cell1 = new Vector3Int(cell.Position.x + dx, cell.Position.y, cell.Position.z);
+                        Vector3Int cell2 = new Vector3Int(cell.Position.x, cell.Position.y, cell.Position.z + dz);
+
+                        bool c1 = IsValid(cell1, CellData) && CellData[cell1.x, cell1.y, cell1.z]?.IsWalkable == true && CellData[cell1.x, cell1.y, cell1.z]?.OccupyingUnit == null;
+                        bool c2 = IsValid(cell2, CellData) && CellData[cell2.x, cell2.y, cell2.z]?.IsWalkable == true && CellData[cell2.x, cell2.y, cell2.z]?.OccupyingUnit == null;
+
+                        if (!(c1 && c2))
+                            continue;
                     }
+
+                    neighbors.Add(neighbor);
                 }
             }
         }
@@ -155,5 +173,42 @@ public class Pathfinding : MonoBehaviour
                pos.y < CellData.GetLength(1) &&
                pos.z < CellData.GetLength(2) &&
                CellData[pos.x, pos.y, pos.z] != null;
+    }
+}
+
+
+
+
+
+public static class MovementHelper
+{
+    public static List<MoveCell> GetReachableCells(MoveCell startCell, MoveCell[,,] CellData, int stepsLimit)
+    {
+        List<MoveCell> reachable = new List<MoveCell>();
+        Queue<(MoveCell, int)> queue = new Queue<(MoveCell, int)>();
+        HashSet<MoveCell> visited = new HashSet<MoveCell>();
+
+        queue.Enqueue((startCell, 0));
+        visited.Add(startCell);
+
+        while (queue.Count > 0)
+        {
+            var (cell, steps) = queue.Dequeue();
+            reachable.Add(cell);
+
+            if (steps >= stepsLimit)
+                continue;
+
+            foreach (MoveCell neighbor in Pathfinding.GetNeighbors(cell, CellData))
+            {
+                if (neighbor == null || !neighbor.IsWalkable || visited.Contains(neighbor))
+                    continue;
+
+                visited.Add(neighbor);
+                queue.Enqueue((neighbor, steps + 1)); // ВАЖНО: всегда +1, даже для диагонали!
+            }
+        }
+
+        return reachable;
     }
 }
