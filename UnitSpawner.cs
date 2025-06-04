@@ -22,13 +22,33 @@ public class UnitSpawner : MonoBehaviour
     IEnumerator SpawnWhenReady()
     {
         while (main == null)
-            main = FindFirstObjectByType<Main>();
+            main = FindAnyObjectByType<Main>();
 
         while (main.CellData == null || main.CellData.Length < 1)
             yield return null;
 
         SpawnUnits(playerCount, TeamType.Player);
         SpawnUnits(enemyCount, TeamType.Enemy);
+
+        // ДВА КАДРА ЖДЁМ!
+        yield return null;
+        yield return null;
+        Debug.Log($"unitData.Count после спавна = {unitData.Count}");
+        foreach (var u in unitData) Debug.Log($"Юнит: {u.UnitObject?.name}, health={u.health}, IsAlive={u.IsAlive}");
+
+
+        Debug.Log($"unitData.Count после спавна = {unitData.Count}");
+
+        // Только теперь инициатива!
+        if (InitiativeManager.Instance != null)
+        {
+            InitiativeManager.Instance.BuildInitiativeQueue();
+            InitiativeManager.Instance.StartTurn();
+        }
+        else
+        {
+            Debug.LogError("InitiativeManager.Instance не найден на сцене!");
+        }
     }
 
     void SpawnUnits(int count, TeamType team)
@@ -37,8 +57,7 @@ public class UnitSpawner : MonoBehaviour
         int sizeY = main.CellData.GetLength(1);
         int sizeZ = main.CellData.GetLength(2);
 
-        int startX = team == TeamType.Player ? 0 : sizeX - 1; //
-
+        int startX = team == TeamType.Player ? 0 : sizeX - 1;
         int spawned = 0;
 
         for (int z = 0; z < sizeZ && spawned < count; z++)
@@ -50,25 +69,32 @@ public class UnitSpawner : MonoBehaviour
                 {
                     var unit = Instantiate(unitPrefab, cell.Position, Quaternion.identity);
 
-                    // --- ОТМЕЧАЕМ КЛЕТКУ КАК ЗАНЯТУЮ ---
+                    // *** Сразу именуй правильно! ***
+                    unit.name = (team == TeamType.Player ? "Player_Unit_" : "Enemy_Unit_") + spawned;
+
                     cell.SetOccupied(unit);
 
                     Unit units = new Unit(startX, y, z, team, unit, false, cell, unit.GetInstanceID());
+                    units.isPlayerControlled = (team == TeamType.Player);
+                    units.IsSelected = false;
                     unitData.Add(units);
+
+                    Debug.Log($"Добавлен юнит: {units.UnitObject?.name}, health={units.health}, IsAlive={units.IsAlive}");
 
                     var controller = unit.GetComponent<UnitController>();
                     if (controller != null)
                     {
                         controller.unitData = units;
-                        Debug.Log($"Spawned Unit: name={unit.name}, instanceID={unit.GetInstanceID()}, dataID={units.GetHashCode()}, controllerID={controller.GetInstanceID()}");
+                        controller.isPlayerControlled = (team == TeamType.Player);
+                        Debug.Log($"{controller.gameObject.name}: controller.isPlayerControlled присвоено {controller.isPlayerControlled}, team={team}");
                     }
-                    else
-                        Debug.LogError("UnitController не найден на префабе юнита!");
 
-                    unit.name = team + "_Unit_" + spawned;
                     spawned++;
                 }
             }
         }
+
+        foreach (var u in unitData)
+            Debug.Log($"[SPAWN DEBUG] {u.UnitObject.name}, team={u.team}, isPlayerControlled={u.isPlayerControlled}");
     }
 }
