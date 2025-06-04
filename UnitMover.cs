@@ -220,6 +220,11 @@ public class UnitMover : MonoBehaviour
                 if (shouldStop)
                     stopAfterThisCell = true;
 
+                Vector3 dir = currentCell.Position - player.transform.position;
+                dir.y = 0;
+                if (dir != Vector3.zero)
+                    player.transform.rotation = Quaternion.LookRotation(dir);
+
                 player.transform.position = Vector3.MoveTowards(
                     player.transform.position,
                     currentCell.Position,
