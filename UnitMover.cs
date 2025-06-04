@@ -238,6 +238,19 @@ public class UnitMover : MonoBehaviour
 
             prevCell = nextCell;
 
+            // Increment the number of steps taken after the unit reaches a cell
+            stepsDone++;
+
+            // Stop moving if we've reached the allowed number of steps
+            if (stepsDone >= maxSteps)
+            {
+                Debug.Log("Достигнут лимит movementPoints! Останавливаем движение.");
+                isMoving = false;
+                shouldStop = false;
+                Global.Instance.isDone = true;
+                break;
+            }
+
             if (stopAfterThisCell)
             {
                 Debug.Log("Остановились ровно на клетке!");
