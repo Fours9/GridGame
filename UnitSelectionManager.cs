@@ -134,7 +134,7 @@ public class UnitSelectionManager : MonoBehaviour
     public void ShowAvailableMoves(Unit unit)
     {
         // Получи Main из сцены, если надо — через FindObjectOfType<Main>();
-        Main main = FindObjectOfType<Main>();
+        Main main = FindFirstObjectByType<Main>();
         if (main == null) return;
 
         if (unit == null || unit.undercell == null)

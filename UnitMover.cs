@@ -246,6 +246,12 @@ public class UnitMover : MonoBehaviour
                 Global.Instance.isDone = true;
                 break;
             }
+
+            if (unitData.RemainingMovement <= 0)
+            {
+                Debug.Log("У юнита закончились очки движения!");
+                break;
+            }
         }
 
         isMoving = false;
