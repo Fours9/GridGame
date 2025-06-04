@@ -50,5 +50,8 @@ public class Unit
         UnitObject = unitObject;  // Ссылка на визуальный объект юнита
         IsSelected = isSelected;  // Установка состояния выбора юнита
         undercell = underCell; // Установка типа клетки
+
+        this.team = team;    // Сохранение команды юнита
+        this.id = id;        // Сохранение уникального идентификатора
     }
 }
