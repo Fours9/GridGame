@@ -23,7 +23,7 @@ public class Unit
     public Vector3Int CurrentCell;
     public int id; // Уникальный идентификатор юнита, может использоваться для поиска или управления
     bool canAct; // Флаг, определяющий, может ли юнит действовать в текущем ходе
-    int attackRange; // Дальность атаки юнита, определяет, на каком расстоянии он может атаковать противника
+    public int attackRange = 1; // Дальность атаки юнита, определяет, на каком расстоянии он может атаковать противника
     bool isAlive; // Флаг, определяющий, жив ли юнит
     int networkId; // Идентификатор юнита в сетевой игре, может использоваться для синхронизации состояния между игроками
     bool isLocalPlayer; // Флаг, определяющий, управляет ли юнит локальный игрок или это AI/другой игрок
@@ -50,5 +50,25 @@ public class Unit
         UnitObject = unitObject;  // Ссылка на визуальный объект юнита
         IsSelected = isSelected;  // Установка состояния выбора юнита
         undercell = underCell; // Установка типа клетки
+    }
+
+    public bool IsAlive => health > 0;
+
+    public void TakeDamage(int amount)
+    {
+        health -= amount;
+        if (health <= 0)
+        {
+            health = 0;
+            isAlive = false;
+            // Можно добавить событие "умер"
+        }
+    }
+
+    public void Attack(Unit target)
+    {
+        if (!IsAlive) return;
+        if (target == null) return;
+        target.TakeDamage(this.damage);
     }
 }

@@ -29,6 +29,17 @@ public class UnitSpawner : MonoBehaviour
 
         SpawnUnits(playerCount, TeamType.Player);
         SpawnUnits(enemyCount, TeamType.Enemy);
+
+        // <<<----- Вот тут инициализация инициативы!
+        if (InitiativeManager.Instance != null)
+        {
+            InitiativeManager.Instance.BuildInitiativeQueue();
+            InitiativeManager.Instance.StartTurn();
+        }
+        else
+        {
+            Debug.LogError("InitiativeManager.Instance не найден на сцене!");
+        }
     }
 
     void SpawnUnits(int count, TeamType team)
