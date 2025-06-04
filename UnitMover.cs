@@ -9,7 +9,7 @@ public class UnitMover : MonoBehaviour
 {
     public float moveSpeed = 5f;
     private Vector3 targetPosition;
-    private bool isMoving = false;
+    public bool isMoving = false;
 
     private GameObject player;
     public float delayBetweenSteps = 0.1f;
@@ -79,9 +79,14 @@ public class UnitMover : MonoBehaviour
         return player == this.gameObject;
     }
 
-    public void StartMoving(List<MoveCell> moveCells)
+    public void StartMoving(List<MoveCell> moveCells, GameObject unitToMove = null)
     {
-        SetAsActiveUnit();
+        Debug.Log($"[UnitMover] StartMoving called for {unitToMove?.name ?? player?.name}");
+
+        if (unitToMove != null)
+            player = unitToMove;
+        else
+            SetAsActiveUnit();
 
         // Получаем доступ к Unit (например, unitData)
         UnitController uc = player.GetComponent<UnitController>();
@@ -103,13 +108,12 @@ public class UnitMover : MonoBehaviour
         canInterrupt = false;
         StartCoroutine(StartInterruptDelay());
 
-        if (!Global.Instance.isDone)
-        {
-            Debug.Log("Другой юнит уже двигается. Жди.");
-            return;
-        }
-
-        Global.Instance.isDone = false;
+        //if (!Global.Instance.isDone)
+        //{
+        //    Debug.Log("Другой юнит уже двигается. Жди.");
+        //    return;
+        //}
+        //Global.Instance.isDone = false;
 
         Debug.Log($"isMoving={isMoving}, Global.Instance.isDone={Global.Instance.isDone}");
 

@@ -124,6 +124,10 @@ public class GridCellBehaviour : MonoBehaviour
         if (selectedUC == null) return;
         Unit selectedUnit = selectedUC.unitData;
 
+        // !!! ДОБАВЬ ЭТО !!!
+        if (selectedUnit.team != TeamType.Player)
+            return; // Игнорируем попытки двигать врага
+
         // Проверяем, имеет ли право на ход
         if (selectedUnit != InitiativeManager.Instance.GetCurrentUnit()) return;
 
@@ -282,7 +286,7 @@ public class GridCellBehaviour : MonoBehaviour
     UnitController GetSelectedUnitController()
     {
         foreach (Unit unit in unitSpawner.unitData)
-            if (unit.IsSelected && unit.UnitObject != null)
+            if (unit.IsSelected && unit.isPlayerControlled && unit.UnitObject != null)
                 return unit.UnitObject.GetComponent<UnitController>();
         return null;
     }

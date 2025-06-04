@@ -13,7 +13,15 @@ public class UnitController : MonoBehaviour
     UnitSpawner unitSpawner;
 
     public Vector3Int CurrentCell;
-    public TeamType team;
+
+    public bool isSelected = false;
+
+    private bool _isPlayerControlled;
+    public bool isPlayerControlled
+    {
+        get => _isPlayerControlled;
+        set => _isPlayerControlled = value;
+    }
 
     public void TakeDamage(int amount)
     {
@@ -31,8 +39,6 @@ public class UnitController : MonoBehaviour
         // Позже: уведомление TurnManager'у
     }
 
-    public bool isPlayerControlled = true; // Можно использовать и для AI
-    public bool isSelected = false;
 
     private Renderer rend;
     private Color originalColor;
@@ -42,6 +48,8 @@ public class UnitController : MonoBehaviour
         rend = GetComponent<Renderer>();
         unitSpawner = FindAnyObjectByType<UnitSpawner>();
         originalColor = rend.material.color;
+
+        Debug.Log($"{gameObject.name}: isPlayerControlled при старте = {isPlayerControlled}");
     }
 
     public void Select()

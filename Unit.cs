@@ -50,6 +50,7 @@ public class Unit
         UnitObject = unitObject;  // Ссылка на визуальный объект юнита
         IsSelected = isSelected;  // Установка состояния выбора юнита
         undercell = underCell; // Установка типа клетки
+        this.team = team;
     }
 
     public bool IsAlive => health > 0;

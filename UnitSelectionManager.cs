@@ -27,7 +27,13 @@ public class UnitSelectionManager : MonoBehaviour
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
+                Debug.Log($"Raycast hit: {hit.collider.gameObject.name}");
+                var ctrl = hit.collider.GetComponent<UnitController>();
+                Debug.Log(ctrl != null ? $"UnitController найден: {ctrl.gameObject.name}, isPlayerControlled={ctrl.isPlayerControlled}" : "UnitController НЕ найден!");
+
                 UnitController unit = hit.collider.GetComponent<UnitController>();
+                if (unit != null)
+                    Debug.Log($"{unit.gameObject.name}: isPlayerControlled={unit.isPlayerControlled}");
 
                 if (unit != null && unit.isPlayerControlled)
                 {
