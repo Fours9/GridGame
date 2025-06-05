@@ -25,7 +25,7 @@ public class UnitMover : MonoBehaviour
         get { return _shouldStop; }
         set
         {
-            Debug.Log($"shouldStop меняется на {value} в {gameObject.name}, Stack: {Environment.StackTrace}");
+            //Debug.Log($"shouldStop меняется на {value} в {gameObject.name}, Stack: {Environment.StackTrace}");
             _shouldStop = value;
         }
     }
@@ -35,7 +35,7 @@ public class UnitMover : MonoBehaviour
 
     void Update()
     {
-        if (!IsActiveUnit()) return;
+        //if (!IsActiveUnit()) return;
 
         if (Input.GetMouseButtonDown(1))
             Debug.LogWarning("Input.GetMouseButtonDown(1) СРАБОТАЛ в кадре!", this);
@@ -79,45 +79,38 @@ public class UnitMover : MonoBehaviour
         return player == this.gameObject;
     }
 
-    public void StartMoving(List<MoveCell> moveCells, GameObject unitToMove = null)
+    public IEnumerator StartMoving(List<MoveCell> moveCells, GameObject unitToMove = null)
     {
         Debug.Log($"[UnitMover] StartMoving called for {unitToMove?.name ?? player?.name}");
-
         if (unitToMove != null)
             player = unitToMove;
         else
             SetAsActiveUnit();
 
-        // Получаем доступ к Unit (например, unitData)
+        Debug.Log($"[UnitMover] player for movement: {player?.name}"); // Должно быть имя юнита
+
         UnitController uc = player.GetComponent<UnitController>();
-        if (uc == null) return;
+        if (uc == null) yield break;
         Unit unitData = uc.unitData;
 
         if (unitData.RemainingMovement <= 0)
         {
             Debug.Log("У юнита закончились очки движения!");
-            return; // Блокируем движение
+            yield break;
         }
 
         if (isMoving)
         {
             Debug.Log("StartMoving: Уже движется, не стартуем новую корутину!");
-            return;
+            yield break;
         }
 
         canInterrupt = false;
         StartCoroutine(StartInterruptDelay());
 
-        //if (!Global.Instance.isDone)
-        //{
-        //    Debug.Log("Другой юнит уже двигается. Жди.");
-        //    return;
-        //}
-        //Global.Instance.isDone = false;
-
         Debug.Log($"isMoving={isMoving}, Global.Instance.isDone={Global.Instance.isDone}");
 
-        moveCoroutine = StartCoroutine(MoveThroughCells(moveCells));
+        yield return StartCoroutine(MoveThroughCells(moveCells));
     }
 
     private IEnumerator StartInterruptDelay()
@@ -172,10 +165,7 @@ public class UnitMover : MonoBehaviour
         if (Vector3.Distance(player.transform.position, moveCells[0].Position) > 0.01f)
             player.transform.position = moveCells[0].Position;
 
-        Debug.Log($"moveCells.Count = {moveCells.Count}, путь:");
-
         Debug.Log($"player.transform.position: {player.transform.position}, moveCells[0]: {moveCells[0].Position}, moveCells[1]: {moveCells[1].Position}");
-        Debug.Log($"distance to moveCells[1]: {Vector3.Distance(player.transform.position, moveCells[1].Position)}");
 
         if (moveCells.Exists(cell => cell == null))
         {

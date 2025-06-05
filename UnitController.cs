@@ -8,7 +8,17 @@ using static UnityEngine.GraphicsBuffer;
 
 public class UnitController : MonoBehaviour
 {
+
+    public GameObject DeadPrefabPlayer;
+    public GameObject DeadPrefabEnemy;
+
+    private Coroutine damageRoutine;
+
     public Unit unitData;
+    private Renderer rend;
+    private Color originalColor;
+    private Color defaultColor;
+    private bool isHighlighted = false;
 
     UnitSpawner unitSpawner;
 
@@ -23,26 +33,6 @@ public class UnitController : MonoBehaviour
         set => _isPlayerControlled = value;
     }
 
-    public void TakeDamage(int amount)
-    {
-        unitData.health -= amount;
-        Debug.Log($"{gameObject.name} получил урон. Осталось здоровья: {unitData.health}");
-
-        if (unitData.health <= 0)
-            Die();
-    }
-
-    void Die()
-    {
-        Debug.Log($"{gameObject.name} погиб");
-        Destroy(gameObject);
-        // Позже: уведомление TurnManager'у
-    }
-
-
-    private Renderer rend;
-    private Color originalColor;
-
     private void Start()
     {
         rend = GetComponent<Renderer>();
@@ -50,6 +40,8 @@ public class UnitController : MonoBehaviour
         originalColor = rend.material.color;
 
         Debug.Log($"{gameObject.name}: isPlayerControlled при старте = {isPlayerControlled}");
+        if (rend != null)
+            defaultColor = rend.material.color;
     }
 
     public void Select()
@@ -65,5 +57,73 @@ public class UnitController : MonoBehaviour
     public bool GetisSelect()
     {
         return isSelected;
+    }
+
+    public void HighlightAsEnemy()
+    {
+        if (rend == null)
+            rend = GetComponent<Renderer>();
+
+        // Жёлтый цвет (можешь подобрать свой оттенок)
+        rend.material.color = Color.yellow;
+    }
+
+    public void ShowDamageFeedback()
+    {
+        if (damageRoutine != null) StopCoroutine(damageRoutine);
+        damageRoutine = StartCoroutine(DamageColorRoutine());
+    }
+
+    IEnumerator DamageColorRoutine()
+    {
+        rend.material.color = Color.magenta;
+        yield return new WaitForSeconds(1f);
+        rend.material.color = originalColor;
+    }
+
+    public void SpawnCorpse()
+    {
+        Vector3 pos = transform.position;
+        GameObject corpse = null;
+        if (unitData.team == TeamType.Player && DeadPrefabPlayer != null)
+            corpse = Instantiate(DeadPrefabPlayer, pos, Quaternion.identity);
+        else if (unitData.team == TeamType.Enemy && DeadPrefabEnemy != null)
+            corpse = Instantiate(DeadPrefabEnemy, pos, Quaternion.identity);
+        Destroy(gameObject);
+    }
+
+
+
+    void OnMouseEnter()
+    {
+        // Подсвечиваем врага, если у игрока выбран свой юнит и он ходит
+        var selectedUC = UnitSelectionManager.Instance.GetSelectedUnit();
+        var activeUnit = InitiativeManager.Instance.GetCurrentUnit();
+        if (unitData != null && selectedUC != null &&
+            selectedUC.unitData.team != unitData.team && activeUnit == selectedUC.unitData)
+        {
+            Highlight(Color.Lerp(Color.red, Color.yellow, 0.5f)); // Оранжевый
+            isHighlighted = true;
+        }
+    }
+
+    void OnMouseExit()
+    {
+        if (isHighlighted)
+        {
+            Highlight(defaultColor);
+            isHighlighted = false;
+        }
+    }
+
+    void OnMouseDown()
+    {
+
+    }
+
+    public void Highlight(Color col)
+    {
+        if (rend != null)
+            rend.material.color = col;
     }
 }

@@ -26,8 +26,7 @@ public class GridCellBehaviour : MonoBehaviour
 
     private Renderer rend;
 
-    public Unit unitOnCell;
-
+    public MoveCell myCell;
     public MoveCell[,,] CellData => main?.CellData;
 
     void Start()
@@ -43,6 +42,8 @@ public class GridCellBehaviour : MonoBehaviour
 
         main = FindAnyObjectByType<Main>();
         unitSpawner = FindAnyObjectByType<UnitSpawner>();
+
+        if (myCell == null) Debug.LogError($"myCell не назначен у {gameObject.name}!", this);
     }
     void OnMouseEnter()
     {
@@ -50,7 +51,7 @@ public class GridCellBehaviour : MonoBehaviour
         rend.material.color = hoverColor;
 
         var selectedUC = GetSelectedUnitController();
-        if (unitOnCell != null && selectedUC != null && unitOnCell.team != selectedUC.unitData.team)
+        if (myCell.unitOnCell != null && selectedUC != null && myCell.unitOnCell.team != selectedUC.unitData.team)
             rend.material.color = highlightColor; // оранжевый
     }
 
@@ -70,13 +71,15 @@ public class GridCellBehaviour : MonoBehaviour
 
     void OnMouseOver()
     {
+        //Debug.Log($"[OnMouseOver] unitOnCell={myCell.unitOnCell?.team}, name={myCell.unitOnCell?.UnitObject?.name}");
         var selectedUC = GetSelectedUnitController();
-        if (Input.GetMouseButtonDown(1) && unitOnCell != null && unitOnCell.team != selectedUC.unitData.team)
+        var targetUnit = myCell.unitOnCell; // <-- только так!
+        if (Input.GetMouseButtonDown(1) && targetUnit != null && selectedUC != null && targetUnit.team != selectedUC.unitData.team)
         {
-            rend.material.color = attackColor; // Белый
-                                               // Вызови логику атаки (см. ниже)
-            TryAttack(unitOnCell);
+            //TryAttack(targetUnit);
         }
+        string unitName = targetUnit != null ? targetUnit.UnitName : "(Пусто)";
+        //Debug.Log($"[OnMouseOver] unitOnCell={unitName}, name={this.name}");
     }
 
     public void SetReachableHighlight(bool enable)
@@ -117,7 +120,7 @@ public class GridCellBehaviour : MonoBehaviour
         }
     }
 
-    private void TryMoveUnitHere()
+    public void TryMoveUnitHere()
     {
         // Получаем контроллер выбранного юнита
         var selectedUC = GetSelectedUnitController();
@@ -146,9 +149,9 @@ public class GridCellBehaviour : MonoBehaviour
         }
 
         if (targetCoords.x < 0 || targetCoords.y < 0 || targetCoords.z < 0 ||
-            targetCoords.x >= main.width || targetCoords.y >= main.height || targetCoords.z >= main.mapHeight)
+            targetCoords.x >= main.width || targetCoords.y >= main.mapHeight || targetCoords.z >= main.height)
         {
-            Debug.LogError("targetCoords вне границ!");
+            Debug.LogError("targetCoords вне границ! " + targetCoords);
             return;
         }
 
@@ -177,7 +180,7 @@ public class GridCellBehaviour : MonoBehaviour
             {
                 path = path.FindAll(cell => cell != null);
                 if (path.Count == 0) return;
-                move.StartMoving(path);
+                move.StartCoroutine(move.StartMoving(path, selectedUnit.UnitObject));
             }
         }
     }
@@ -212,58 +215,37 @@ public class GridCellBehaviour : MonoBehaviour
     void TryAttack(Unit target)
     {
         var activeUC = GetSelectedUnitController();
-        if (activeUC == null) return;
+        if (activeUC == null)
+        {
+            Debug.LogWarning("activeUC == null");
+            return;
+        }
         Unit myUnit = activeUC.unitData;
 
         Unit activeUnit = InitiativeManager.Instance.GetCurrentUnit();
-        if (myUnit != activeUnit) return;
+        if (myUnit != activeUnit)
+        {
+            Debug.LogWarning($"myUnit != activeUnit: myUnit={myUnit.UnitName}, activeUnit={activeUnit.UnitName}");
+            return;
+        }
 
-        int distance = GetDistance(myUnit.CurrentCell, target.CurrentCell);
+        int distance = Mathf.Max(
+            Mathf.Abs(myUnit.CurrentCell.x - target.CurrentCell.x),
+            Mathf.Abs(myUnit.CurrentCell.y - target.CurrentCell.y),
+            Mathf.Abs(myUnit.CurrentCell.z - target.CurrentCell.z)
+        );
+        Debug.Log($"Атака: distance={distance}, attackRange={myUnit.attackRange}");
+
         if (distance <= myUnit.attackRange)
         {
+            Debug.Log($"Атака по врагу: {target.UnitName}");
             myUnit.Attack(target);
             Debug.Log("Прямая атака!");
             return;
         }
-
-        // Поиск клетки для атаки
-        List<Vector3Int> possibleAttackCells = GetCellsAround(target.CurrentCell, myUnit.attackRange);
-        MoveCell moveTarget = null;
-        List<MoveCell> pathToCell = null;
-        var pathfinder = FindAnyObjectByType<Pathfinding>();
-
-        foreach (var cellPos in possibleAttackCells)
-        {
-            if (cellPos.x < 0 || cellPos.y < 0 || cellPos.z < 0 ||
-                cellPos.x >= main.width || cellPos.y >= main.height || cellPos.z >= main.mapHeight)
-                continue;
-
-            var targetCell = main.CellData[cellPos.x, cellPos.y, cellPos.z];
-            if (targetCell == null || !targetCell.IsWalkable) continue;
-
-            var path = pathfinder.FindPath(myUnit.CurrentCell, cellPos, CellData);
-
-            if (path != null && path.Count - 1 <= myUnit.RemainingMovement)
-            {
-                moveTarget = targetCell;
-                pathToCell = path;
-                break;
-            }
-        }
-
-        if (moveTarget != null && pathToCell != null)
-        {
-            // Двигаемся, а после движения — атака (лучше через callback/ивент, но для начала можно просто после задержки)
-            UnitMover mover = activeUC.gameObject.GetComponent<UnitMover>();
-            if (mover != null)
-            {
-                mover.StartMoving(pathToCell);
-                // Запусти корутину ожидания окончания движения, а потом myUnit.Attack(target);
-            }
-        }
         else
         {
-            Debug.Log("Нет доступных клеток для атаки! Слишком далеко.");
+            Debug.Log($"Враг вне досягаемости. distance={distance}, attackRange={myUnit.attackRange}");
         }
     }
 
