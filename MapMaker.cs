@@ -59,6 +59,8 @@ public class Main : MonoBehaviour
     // Типы клеток на карте
     public enum CellType { StoneRoad, Stone, None, Green, Yellow, Red, Purple, Gray, Blue, Brown }
 
+    public MoveCell[,,] GetCellData() => CellData;
+
 
     // Структура, описывающая информацию об одной клетке
     [System.Serializable]
@@ -522,6 +524,7 @@ public class Main : MonoBehaviour
 
                         // Создаём логическую клетку перемещения и добавляем в список доступных для пути
                         MoveCell moveCell = new MoveCell(x, y, z, cellObj, true, 1, below.type, null);
+                        cellObj.GetComponent<GridCellBehaviour>().myCell = moveCell; // <-- Исправлено здесь!
                         CellData[x, y, z] = moveCell; // Сохраняем ссылку на MoveCell в массиве CellData
 
                         // --- Добавь вот это: ---
@@ -579,5 +582,21 @@ public class Main : MonoBehaviour
                     behaviour.SetReachableHighlight(true);
             }
         }
+    }
+
+    public bool IsCellInBounds(Vector3Int pos)
+    {
+        return pos.x >= 0 && pos.x < width
+            && pos.y >= 0 && pos.y < mapHeight
+            && pos.z >= 0 && pos.z < height;
+    }
+
+    public MoveCell GetCurrentUnitCell()
+    {
+        var unit = InitiativeManager.Instance.GetCurrentUnit();
+        if (unit == null) return null;
+        Vector3Int c = unit.CurrentCell;
+        if (!IsCellInBounds(c)) return null;
+        return CellData[c.x, c.y, c.z];
     }
 }

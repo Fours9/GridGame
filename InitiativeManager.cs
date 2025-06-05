@@ -86,6 +86,11 @@ public class InitiativeManager : MonoBehaviour
         var currentUnit = GetCurrentUnit();
         UnitController ctrl = null;
 
+        if (currentUnit != null)
+        {
+            currentUnit.actionPoints = currentUnit.maxActionPoints; // Восстанавливаем AP!
+        }
+
         if (currentUnit != null && currentUnit.UnitObject != null)
             ctrl = currentUnit.UnitObject.GetComponent<UnitController>();
 
@@ -199,7 +204,7 @@ public class InitiativeManager : MonoBehaviour
         {
             Debug.Log($"AI: ПытаетсEnemyAITurn двигаться. Старт...");
             Debug.Log($"[AI] Вызов StartMoving для {enemyUnit.UnitObject.name}, путь длина = {movePath.Count}");
-            mover.StartMoving(movePath, enemyUnit.UnitObject);
+            mover.StartCoroutine(mover.StartMoving(movePath, enemyUnit.UnitObject));
             while (mover.isMoving)
                 yield return null;
             Debug.Log("AI: Движение завершено!");

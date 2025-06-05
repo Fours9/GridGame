@@ -18,6 +18,7 @@ public class MoveCell
 
     public Main.CellType undertype; // “ип клетки, определ€емый в основном скрипте
     public GameObject OccupyingUnit { get; set; }
+    public Unit unitOnCell;
 
     // ѕараметры дл€ алгоритма A*:
     public float GCost;                                   // —тоимость пути от начальной клетки до этой
@@ -39,15 +40,29 @@ public class MoveCell
 
 
 
-    public void SetOccupied(GameObject unit)
+    public void SetOccupied(GameObject unitObj)
     {
-        OccupyingUnit = unit;
-        IsWalkable = (unit == null);
-
-        if (unit != null)
+        this.OccupyingUnit = unitObj;
+        if (unitObj == null)
         {
-            ApplyEffectsTo(unit);
+            unitOnCell = null;
+            //Debug.Log($"SetOccupied(null) Ч unitOnCell обнулЄн! [{Position}]");
         }
+        else
+        {
+            UnitController uc = unitObj.GetComponent<UnitController>();
+            ApplyEffectsTo(unitObj);
+            if (uc != null)
+            {
+                unitOnCell = uc.unitData;
+                //Debug.Log($"SetOccupied({unitObj.name}) Ч unitOnCell установлен [{Position}]");
+            }
+            else
+            {
+                Debug.LogWarning($"SetOccupied: {unitObj.name} не имеет UnitController");
+            }
+        }
+        IsWalkable = (unitObj == null);
     }
 
     public void Highlight(Color color)

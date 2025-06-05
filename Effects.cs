@@ -16,7 +16,7 @@ public class BurnEffect : MonoBehaviour, ICellEffect
         var health = unit.GetComponent<UnitController>();
         if (health != null)
         {
-            health.TakeDamage(damageAmount);
+            //health.TakeDamage(damageAmount);
             Debug.Log($"{unit.name} получил {damageAmount} урона от горящей клетки!");
         }
     }

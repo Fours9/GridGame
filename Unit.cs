@@ -31,6 +31,9 @@ public class Unit
     public int movementPoints = 5;  // Количество очков движения, которые юнит может использовать за ход
     public int stepsUsed = 0;  // Количество шагов, использованных юнитом в текущем ходе
 
+    public int maxActionPoints = 1; // Максимум очков действия за ход (например, можно расширить для других юнитов)
+    public int actionPoints = 1;    // Текущие очки действия
+
     public bool canMove => RemainingMovement > 0; // Автоматически вычисляется
 
     public int RemainingMovement => movementPoints - stepsUsed;  // Свойство для получения оставшихся очков движения
@@ -44,6 +47,14 @@ public class Unit
     public bool isPlayerControlled = true; // Можно использовать и для AI
     public bool IsSelected = false; // Состояние выбора юнита
 
+    public string UnitName
+    {
+        get
+        {
+            return UnitObject != null ? UnitObject.name : "Unnamed";
+        }
+    }
+
     public Unit(int x, int y, int z, TeamType team, GameObject unitObject, bool isSelected, MoveCell underCell, int id)  // Конструктор для инициализации клетки
     {
         CurrentCell = new Vector3Int(x, y, z); // Инициализация координат клетки
@@ -55,21 +66,66 @@ public class Unit
 
     public bool IsAlive => health > 0;
 
+    public void Attack(Unit target)
+    {
+        if (!IsAlive) return;
+        if (target == null || !target.IsAlive) return;
+
+        // --- Новое: проверка actionPoints ---
+        if (actionPoints <= 0)
+        {
+            Debug.Log($"{UnitName}: Нет очков действия для атаки!");
+            return;
+        }
+
+        // Списываем actionPoints за атаку
+        actionPoints--;
+
+        // Урон
+        target.TakeDamage(this.damage);
+
+        // Можно добавить вызов анимации атаки или эффекта
+        Debug.Log($"{UnitName} атакует {target.UnitName}! Осталось actionPoints: {actionPoints}");
+    }
+
     public void TakeDamage(int amount)
     {
         health -= amount;
+        if (UnitObject != null)
+        {
+            var ctrl = UnitObject.GetComponent<UnitController>();
+            if (ctrl != null)
+                ctrl.ShowDamageFeedback(); // визуальная отдача
+        }
         if (health <= 0)
         {
             health = 0;
             isAlive = false;
-            // Можно добавить событие "умер"
+            Die();
         }
     }
 
-    public void Attack(Unit target)
+    public void Die()
     {
-        if (!IsAlive) return;
-        if (target == null) return;
-        target.TakeDamage(this.damage);
+        // Клетка становится проходимой
+        if (CurrentCell != null)
+        {
+            var main = GameObject.FindFirstObjectByType<Main>();
+            if (main != null)
+            {
+                var cell = main.CellData[CurrentCell.x, CurrentCell.y, CurrentCell.z];
+                if (cell != null) cell.SetOccupied(null);
+            }
+        }
+
+        // Спавним труп, если нужно
+        if (UnitObject != null)
+        {
+            var ctrl = UnitObject.GetComponent<UnitController>();
+            if (ctrl != null)
+            {
+                ctrl.SpawnCorpse(); // отдельный метод — см. ниже
+            }
+        }
     }
 }
