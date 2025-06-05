@@ -29,6 +29,10 @@ public class InitiativeManager : MonoBehaviour
             .OrderByDescending(u => u.Initiative)
             .ToList();
 
+        Debug.Log("Очередь инициативы (turnOrder):");
+        for (int i = 0; i < turnOrder.Count; i++)
+            Debug.Log($"[{i}] {turnOrder[i].UnitObject.name} team={turnOrder[i].team} IsAlive={turnOrder[i].IsAlive}");
+
         Debug.Log($"BuildInitiativeQueue вызван. unitData.Count = {unitSpawner.unitData.Count}, turnOrder.Count = {turnOrder.Count}");
 
         if (turnOrder.Count == 0)
@@ -47,6 +51,7 @@ public class InitiativeManager : MonoBehaviour
 
     public void EndCurrentTurn()
     {
+        Debug.Log($"[EndTurn] Был: {currentUnitIndex} ({turnOrder[currentUnitIndex].UnitObject.name}, team={turnOrder[currentUnitIndex].team})");
         // Сбросить очки движения
         var unit = GetCurrentUnit();
         if (unit != null) unit.stepsUsed = 0;
@@ -59,8 +64,16 @@ public class InitiativeManager : MonoBehaviour
             if (turnOrder[currentUnitIndex].IsAlive)
                 break;
         } while (currentUnitIndex != startIdx);
-
+        Debug.Log($"[EndTurn] Стал: {currentUnitIndex} ({turnOrder[currentUnitIndex].UnitObject.name}, team={turnOrder[currentUnitIndex].team})");
+        Debug.Log($"Передан ход: {turnOrder[currentUnitIndex].UnitObject.name}");
         StartTurn();
+    }
+
+    MoveCell GetClosestFreeNeighbor(Main main, MoveCell targetCell)
+    {
+        var neighbors = Pathfinding.GetNeighbors(targetCell, main.CellData);
+        // Только свободные (по ним можно ходить и никто не стоит)
+        return neighbors.FirstOrDefault(n => n.IsWalkable && n.OccupyingUnit == null);
     }
 
     public void StartTurn()
@@ -138,7 +151,24 @@ public class InitiativeManager : MonoBehaviour
 
         Main main = FindAnyObjectByType<Main>();
         var pathfinder = FindAnyObjectByType<Pathfinding>();
-        List<MoveCell> path = pathfinder.FindPath(enemyUnit.CurrentCell, targetPlayer.CurrentCell, main.CellData);
+
+        // --- Новое: ---
+        MoveCell targetCell = main.CellData[targetPlayer.CurrentCell.x, targetPlayer.CurrentCell.y, targetPlayer.CurrentCell.z];
+        MoveCell attackCell = GetClosestFreeNeighbor(main, targetCell);
+        if (attackCell == null)
+        {
+            Debug.Log("AI: Нет свободных клеток рядом с игроком!");
+            // Вот это новый лог:
+            var neighbors = Pathfinding.GetNeighbors(targetCell, main.CellData);
+            Debug.Log($"AI: Всего соседей {neighbors.Count}, из них walkable + пустые: " +
+                neighbors.Count(n => n.IsWalkable && n.OccupyingUnit == null));
+            foreach (var n in neighbors)
+                Debug.Log($"AI: Neighbor {n.Position} IsWalkable={n.IsWalkable} OccupyingUnit={(n.OccupyingUnit == null ? "null" : n.OccupyingUnit.name)}");
+            EndCurrentTurn();
+            yield break;
+        }
+
+        List<MoveCell> path = pathfinder.FindPath(enemyUnit.CurrentCell, attackCell.Position, main.CellData);
 
         if (path == null || path.Count < 2)
         {
@@ -157,7 +187,7 @@ public class InitiativeManager : MonoBehaviour
         {
             Debug.Log($"AI: ПытаетсEnemyAITurn двигаться. Старт...");
             Debug.Log($"[AI] Вызов StartMoving для {enemyUnit.UnitObject.name}, путь длина = {movePath.Count}");
-            mover.StartMoving(movePath);
+            mover.StartMoving(movePath, enemyUnit.UnitObject);
             while (mover.isMoving)
                 yield return null;
             Debug.Log("AI: Движение завершено!");

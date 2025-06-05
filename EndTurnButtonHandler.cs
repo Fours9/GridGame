@@ -7,21 +7,20 @@ public class EndTurnButtonHandler : MonoBehaviour
 
     void Update()
     {
-        var unit = InitiativeManager.Instance?.GetCurrentUnit();
-        endTurnButton.interactable = (unit != null && unit.team == TeamType.Player);
+        var currentUnit = InitiativeManager.Instance.GetCurrentUnit();
+        endTurnButton.interactable = currentUnit != null && currentUnit.isPlayerControlled;
     }
 
     public void OnEndTurnButtonClick()
     {
-        var unit = InitiativeManager.Instance?.GetCurrentUnit();
-        if (unit != null && unit.team == TeamType.Player)
+        var currentUnit = InitiativeManager.Instance.GetCurrentUnit();
+        if (currentUnit != null && currentUnit.isPlayerControlled)
         {
             InitiativeManager.Instance.EndCurrentTurn();
-            Debug.Log("Нажата кнопка 'Завершить ход'");
         }
         else
         {
-            Debug.Log("Сейчас не ход игрока! Кнопка игнорируется.");
+            Debug.LogWarning("EndTurn нажата не на игроке!");
         }
     }
 }

@@ -58,7 +58,7 @@ public class Pathfinding : MonoBehaviour
             openSet.Remove(current);
             closedSet.Add(current);
 
-            foreach (MoveCell neighbor in GetNeighbors(current, CellData))
+            foreach (MoveCell neighbor in GetNeighbors(current, CellData, targetCell))
             {
                 if (closedSet.Contains(neighbor)) continue;
 
@@ -115,7 +115,7 @@ public class Pathfinding : MonoBehaviour
     /// Отримати сусідів, доступних для переміщення.
     /// Забороняє рух по діагоналі в площині XZ, дозволяючи рух по Y.
     /// </summary>
-    internal static List<MoveCell> GetNeighbors(MoveCell cell, MoveCell[,,] CellData)
+    internal static List<MoveCell> GetNeighbors(MoveCell cell, MoveCell[,,] CellData, MoveCell targetCell = null)
     {
         List<MoveCell> neighbors = new List<MoveCell>();
 
@@ -138,13 +138,16 @@ public class Pathfinding : MonoBehaviour
                         continue;
 
                     MoveCell neighbor = CellData[neighborPos.x, neighborPos.y, neighborPos.z];
-                    if (neighbor == null || !neighbor.IsWalkable || neighbor.OccupyingUnit != null)
+                    if (neighbor == null || !neighbor.IsWalkable)
                         continue;
 
-                    // --- Строгое ограничение на диагонали по XZ-слою ---
+                    // ВАЖНО! Если клетка занята, разрешаем только если это цель!
+                    if (neighbor.OccupyingUnit != null && (targetCell == null || neighbor != targetCell))
+                        continue;
+
+                    // Диагонали по XZ
                     if (dx != 0 && dz != 0 && dy == 0)
                     {
-                        // Оба прямых соседа ДОЛЖНЫ быть проходимы и не заняты
                         Vector3Int cell1 = new Vector3Int(cell.Position.x + dx, cell.Position.y, cell.Position.z);
                         Vector3Int cell2 = new Vector3Int(cell.Position.x, cell.Position.y, cell.Position.z + dz);
 
