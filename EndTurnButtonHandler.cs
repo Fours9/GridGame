@@ -8,7 +8,21 @@ public class EndTurnButtonHandler : MonoBehaviour
     void Update()
     {
         var currentUnit = InitiativeManager.Instance.GetCurrentUnit();
-        endTurnButton.interactable = currentUnit != null && currentUnit.isPlayerControlled;
+        bool canPress = false;
+        if (currentUnit != null && currentUnit.isPlayerControlled)
+        {
+            // Получаем UnitMover этого юнита
+            var mover = currentUnit.UnitObject.GetComponent<UnitMover>();
+            if (mover != null)
+            {
+                canPress = !mover.isMoving;
+            }
+            else
+            {
+                canPress = true; // Если не нашли, пусть кнопка работает (или false — на твой выбор)
+            }
+        }
+        endTurnButton.interactable = canPress;
     }
 
     public void OnEndTurnButtonClick()
@@ -16,6 +30,12 @@ public class EndTurnButtonHandler : MonoBehaviour
         var currentUnit = InitiativeManager.Instance.GetCurrentUnit();
         if (currentUnit != null && currentUnit.isPlayerControlled)
         {
+            var mover = currentUnit.UnitObject.GetComponent<UnitMover>();
+            if (mover != null && mover.isMoving)
+            {
+                Debug.LogWarning("Нельзя завершить ход, пока юнит двигается!");
+                return;
+            }
             InitiativeManager.Instance.EndCurrentTurn();
         }
         else

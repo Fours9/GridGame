@@ -66,4 +66,13 @@ public class UnitController : MonoBehaviour
     {
         return isSelected;
     }
+
+    public void HighlightAsEnemy()
+    {
+        if (rend == null)
+            rend = GetComponent<Renderer>();
+
+        // Жёлтый цвет (можешь подобрать свой оттенок)
+        rend.material.color = Color.yellow;
+    }
 }

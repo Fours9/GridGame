@@ -77,24 +77,19 @@ public class UnitSelectionManager : MonoBehaviour
         }
         else
         {
-            // ≈сли юнит не выбран Ч сбросить подсветку
             var main = FindAnyObjectByType<Main>();
             main.HighlightReachableCells(null);
         }
 
-        // —кидаЇмо вид≥ленн€ у вс≥х юн≥т≥в
+        // —нимаем выделение со всех
         foreach (Unit unit in unitSpawner.unitData)
         {
             if (unit != null && unit.UnitObject != null)
             {
                 unit.IsSelected = false;
-
-                // ќтримуЇмо UnitController конкретного юн≥та
                 UnitController ctrl = unit.UnitObject.GetComponent<UnitController>();
                 if (ctrl != null)
-                {
                     ctrl.Deselect();
-                }
             }
         }
 
@@ -112,7 +107,11 @@ public class UnitSelectionManager : MonoBehaviour
                 UnitController ctrl = unitSelect.GetComponent<UnitController>();
                 if (ctrl != null)
                 {
-                    ctrl.Select();
+                    // ¬–ј√ Ч жЄлтый, »√–ќ  Ч зелЄный
+                    if (unitSelect.isPlayerControlled)
+                        ctrl.Select(); // зелЄный
+                    else
+                        ctrl.HighlightAsEnemy(); // жЄлтый Ч новый метод!
                 }
 
                 UnitMover mover = unitSelect.GetComponent<UnitMover>();
@@ -125,9 +124,7 @@ public class UnitSelectionManager : MonoBehaviour
                     Debug.LogWarning("UnitMover не знайдено у вибраному юн≥т≥!");
                 }
 
-                // 2. ѕќƒ—¬≈“ ј ƒќ—“”ѕЌџ’  Ћ≈“ќ  ƒЋя ’ќƒј:
                 ShowAvailableMoves(unit);
-
             }
         }
     }

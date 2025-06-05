@@ -51,6 +51,9 @@ public class InitiativeManager : MonoBehaviour
 
     public void EndCurrentTurn()
     {
+        // Сбросить синие клетки
+        UnitSelectionManager.Instance.ClearAllHighlights();
+
         Debug.Log($"[EndTurn] Был: {currentUnitIndex} ({turnOrder[currentUnitIndex].UnitObject.name}, team={turnOrder[currentUnitIndex].team})");
         // Сбросить очки движения
         var unit = GetCurrentUnit();
@@ -66,6 +69,8 @@ public class InitiativeManager : MonoBehaviour
         } while (currentUnitIndex != startIdx);
         Debug.Log($"[EndTurn] Стал: {currentUnitIndex} ({turnOrder[currentUnitIndex].UnitObject.name}, team={turnOrder[currentUnitIndex].team})");
         Debug.Log($"Передан ход: {turnOrder[currentUnitIndex].UnitObject.name}");
+
+
         StartTurn();
     }
 
@@ -79,9 +84,16 @@ public class InitiativeManager : MonoBehaviour
     public void StartTurn()
     {
         var currentUnit = GetCurrentUnit();
-        Debug.Log($"[TURN DEBUG] Ходит юнит: {currentUnit.UnitObject.name}, team={currentUnit.team}, isPlayerControlled={currentUnit.isPlayerControlled}");
+        UnitController ctrl = null;
 
-        Debug.Log("InitiativeManager: StartTurn вызывается! [DEBUG]");
+        if (currentUnit != null && currentUnit.UnitObject != null)
+            ctrl = currentUnit.UnitObject.GetComponent<UnitController>();
+
+        if (ctrl != null)
+            UnitSelectionManager.Instance.SelectUnit(ctrl);
+        else
+            UnitSelectionManager.Instance.SelectUnit(null);
+
         if (currentUnit == null)
         {
             Debug.LogWarning("Нет активного юнита для хода! Жду появления юнитов...");
