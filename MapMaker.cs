@@ -1,4 +1,3 @@
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -39,7 +38,7 @@ public class Main : MonoBehaviour
     public GameObject brownCube;   // Дороги, затопленные водой
     public GameObject stoneCube;   // Камень внутри пещер
     public GameObject gridCellPrefab; // Универсальный префаб (может использоваться отдельно)
-    public GameObject playerPrefab;
+    public GameObject stoneRoadCube;  // <--- Новый префаб для StoneRoad
 
     // Флаги включения каждой из 4 дорог
     public bool enableNorthRoad = true;
@@ -58,7 +57,7 @@ public class Main : MonoBehaviour
     private float offset4X, offset4Z;
 
     // Типы клеток на карте
-    public enum CellType { Stone, None, Green, Yellow, Red, Purple, Gray, Blue, Brown }
+    public enum CellType { StoneRoad, Stone, None, Green, Yellow, Red, Purple, Gray, Blue, Brown }
 
 
     // Структура, описывающая информацию об одной клетке
@@ -105,7 +104,6 @@ public class Main : MonoBehaviour
     {
         CellArray = new CellInfo[width, mapHeight, height];
 
-
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < mapHeight; y++)
@@ -116,7 +114,6 @@ public class Main : MonoBehaviour
                 }
             }
         }
-
 
         // Создаём двумерные массивы типов клеток, маски пещер и озёр
         CellType[,] map = new CellType[width, height];  // Основная карта с типами клеток
@@ -434,11 +431,25 @@ public class Main : MonoBehaviour
 
                 if (type == CellType.Purple)
                 {
-                    // Пещера: 2 слоя камня внизу
+                    // -- ВНИМАНИЕ: добавляем логику для StoneRoad --
+                    // Проверяем, какой тип блока был под этим местом ДО превращения в Purple (Gray, Brown, etc.)
+                    bool wasRoad = false;
+                    // Проверяем, была ли здесь дорога или болото
+                    if (mainPrefab == grayCube || mainPrefab == brownCube)
+                        wasRoad = true;
+
                     for (int y = 0; y < 2; y++)
                     {
-                        Instantiate(stoneCube, new Vector3(x, y, z), Quaternion.identity, transform);
-                        CellArray[x, y, z] = new CellInfo(x, y, z, CellType.Stone); // <--- добавь ЭТО
+                        if (wasRoad && stoneRoadCube != null)
+                        {
+                            Instantiate(stoneRoadCube, new Vector3(x, y, z), Quaternion.identity, transform);
+                            CellArray[x, y, z] = new CellInfo(x, y, z, CellType.StoneRoad);
+                        }
+                        else
+                        {
+                            Instantiate(stoneCube, new Vector3(x, y, z), Quaternion.identity, transform);
+                            CellArray[x, y, z] = new CellInfo(x, y, z, CellType.Stone);
+                        }
                     }
 
                     // Пустота (воздух) в центре
@@ -448,8 +459,7 @@ public class Main : MonoBehaviour
                     }
                     // Верхний слой — фиолетовый блок
                     Instantiate(purpleCube, new Vector3(x, 4, z), Quaternion.identity, transform);
-                    CellArray[x, 4, z] = new CellInfo(x, 4, z, CellType.Purple); // <--- добавь ЭТО
-
+                    CellArray[x, 4, z] = new CellInfo(x, 4, z, CellType.Purple);
 
                     // Верхняя часть пустая до y = 8
                     for (int y = 5; y < mapHeight; y++)

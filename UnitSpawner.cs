@@ -1,45 +1,58 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+
+public enum Side
+{
+    Any,
+    Top,
+    Bottom,
+    Left,
+    Right
+}
 
 public class UnitSpawner : MonoBehaviour
 {
     public List<Unit> unitData = new List<Unit>();
 
-    public GameObject unitPrefab;
+    public GameObject playerPrefab;
+    public GameObject enemyPrefab;
     public Main main;
 
     public int playerCount = 3;
     public int enemyCount = 3;
 
+    public Side playerSpawnSide = Side.Top; // можно задать в Inspector
+    public Side enemySpawnSide = Side.Any;
+
     void Start()
     {
-        unitData.Clear(); // Очистка списка юнитов перед началом
+        unitData.Clear();
         StartCoroutine(SpawnWhenReady());
+    }
+
+    public void SetPlayerSpawnSide(int sideIndex)
+    {
+        playerSpawnSide = (Side)sideIndex;
+        Debug.Log($"Сторона спавна игрока изменена: {playerSpawnSide}");
     }
 
     IEnumerator SpawnWhenReady()
     {
         while (main == null)
             main = FindAnyObjectByType<Main>();
-
         while (main.CellData == null || main.CellData.Length < 1)
             yield return null;
 
-        SpawnUnits(playerCount, TeamType.Player);
-        SpawnUnits(enemyCount, TeamType.Enemy);
+        SpawnUnitsOnRoads(playerCount, TeamType.Player, playerSpawnSide);
+        SpawnUnitsOnRoads(enemyCount, TeamType.Enemy, enemySpawnSide);
 
-        // ДВА КАДРА ЖДЁМ!
-        yield return null;
-        yield return null;
+        yield return null; yield return null;
         Debug.Log($"unitData.Count после спавна = {unitData.Count}");
         foreach (var u in unitData) Debug.Log($"Юнит: {u.UnitObject?.name}, health={u.health}, IsAlive={u.IsAlive}");
 
-
-        Debug.Log($"unitData.Count после спавна = {unitData.Count}");
-
-        // Только теперь инициатива!
         if (InitiativeManager.Instance != null)
         {
             InitiativeManager.Instance.BuildInitiativeQueue();
@@ -51,50 +64,114 @@ public class UnitSpawner : MonoBehaviour
         }
     }
 
-    void SpawnUnits(int count, TeamType team)
+    public void SpawnUnitsOnRoads(int count, TeamType team, Side side = Side.Any)
     {
-        int sizeX = main.CellData.GetLength(0);
-        int sizeY = main.CellData.GetLength(1);
-        int sizeZ = main.CellData.GetLength(2);
+        Main main = FindFirstObjectByType<Main>();
+        var roadCells = GetRoadCellsForSpawn(main, side);
 
-        int startX = team == TeamType.Player ? 0 : sizeX - 1;
-        int spawned = 0;
-
-        for (int z = 0; z < sizeZ && spawned < count; z++)
+        System.Random rnd = new System.Random();
+        for (int i = 0; i < count; i++)
         {
-            for (int y = 0; y < sizeY && spawned < count; y++)
+            if (roadCells.Count == 0) break;
+
+            int idx = rnd.Next(roadCells.Count);
+            MoveCell cell = roadCells[idx];
+            roadCells.RemoveAt(idx);
+
+            // **ПОВТОРНАЯ ПРОВЕРКА**
+            if (cell.OccupyingUnit != null)
             {
-                var cell = main.CellData[startX, y, z];
-                if (cell != null && cell.IsWalkable)
+                i--;
+                continue;
+            }
+
+            GameObject prefab = (team == TeamType.Player) ? playerPrefab : enemyPrefab;
+            GameObject unitObj = Instantiate(prefab, cell.Position, Quaternion.identity);
+            unitObj.name = (team == TeamType.Player ? "Player_Unit_" : "Enemy_Unit_") + i;
+
+            // ВАЖНО: Сразу пометить клетку занятой
+            cell.SetOccupied(unitObj);
+
+            var unit = new Unit(cell.Position.x, cell.Position.y, cell.Position.z, team, unitObj, false, cell, unitObj.GetInstanceID());
+            unit.isPlayerControlled = (team == TeamType.Player);
+            unit.IsSelected = false;
+            unitData.Add(unit);
+
+            var controller = unitObj.GetComponent<UnitController>();
+            if (controller != null)
+            {
+                controller.unitData = unit;
+                controller.isPlayerControlled = (team == TeamType.Player);
+                Debug.Log($"{controller.gameObject.name}: controller.isPlayerControlled присвоено {controller.isPlayerControlled}, team={team}");
+            }
+        }
+    }
+
+    private List<MoveCell> GetRoadCellsForSpawn(Main main, Side side)
+    {
+        List<MoveCell> result = new List<MoveCell>();
+        int w = main.width;
+        int h = main.height;
+        int mh = main.mapHeight;
+
+        int centerX = w / 2;
+        int centerZ = h / 2;
+        int roadBorder = 3;
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < mh; y++)
+            {
+                for (int z = 0; z < h; z++)
                 {
-                    var unit = Instantiate(unitPrefab, cell.Position, Quaternion.identity);
+                    var cell = main.CellData[x, y, z];
+                    if (cell == null) continue;
+                    // Вот здесь важное изменение:
+                    // мы проверяем только на типы, которые считаем "дорогой"
+                    var allowedTypes = new[] { Main.CellType.Gray, Main.CellType.Brown, Main.CellType.StoneRoad };
+                    if ((!allowedTypes.Contains(cell.undertype)) || cell.OccupyingUnit != null)
+                        continue;
 
-                    // *** Сразу именуй правильно! ***
-                    unit.name = (team == TeamType.Player ? "Player_Unit_" : "Enemy_Unit_") + spawned;
-
-                    cell.SetOccupied(unit);
-
-                    Unit units = new Unit(startX, y, z, team, unit, false, cell, unit.GetInstanceID());
-                    units.isPlayerControlled = (team == TeamType.Player);
-                    units.IsSelected = false;
-                    unitData.Add(units);
-
-                    Debug.Log($"Добавлен юнит: {units.UnitObject?.name}, health={units.health}, IsAlive={units.IsAlive}");
-
-                    var controller = unit.GetComponent<UnitController>();
-                    if (controller != null)
+                    bool fits = false;
+                    switch (side)
                     {
-                        controller.unitData = units;
-                        controller.isPlayerControlled = (team == TeamType.Player);
-                        Debug.Log($"{controller.gameObject.name}: controller.isPlayerControlled присвоено {controller.isPlayerControlled}, team={team}");
+                        case Side.Top: fits = z >= h - roadBorder; break;
+                        case Side.Bottom: fits = z < roadBorder; break;
+                        case Side.Left: fits = x < roadBorder; break;
+                        case Side.Right: fits = x >= w - roadBorder; break;
+                        case Side.Any: fits = Mathf.Abs(x - centerX) <= roadBorder && Mathf.Abs(z - centerZ) <= roadBorder; break;
                     }
+                    if (fits) result.Add(cell);
 
-                    spawned++;
+                    if (fits && CellHasNeighbor(cell, main.CellData))
+                        result.Add(cell);
                 }
             }
         }
+        return result;
+    }
 
-        foreach (var u in unitData)
-            Debug.Log($"[SPAWN DEBUG] {u.UnitObject.name}, team={u.team}, isPlayerControlled={u.isPlayerControlled}");
+    private bool CellHasNeighbor(MoveCell cell, MoveCell[,,] allCells)
+    {
+        var pos = cell.Position;
+
+        int[][] offsets = new int[][]
+        {
+        new int[] {1,0,0},
+        new int[] {-1,0,0},
+        new int[] {0,1,0},
+        new int[] {0,-1,0},
+        new int[] {0,0,1},
+        new int[] {0,0,-1}
+        };
+
+        foreach (var o in offsets)
+        {
+            int nx = pos.x + o[0], ny = pos.y + o[1], nz = pos.z + o[2];
+            if (nx >= 0 && ny >= 0 && nz >= 0 && nx < allCells.GetLength(0) && ny < allCells.GetLength(1) && nz < allCells.GetLength(2))
+                if (allCells[nx, ny, nz] != null && allCells[nx, ny, nz].IsWalkable)
+                    return true;
+        }
+        return false;
     }
 }
