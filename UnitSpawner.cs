@@ -67,7 +67,7 @@ public class UnitSpawner : MonoBehaviour
     public void SpawnUnitsOnRoads(int count, TeamType team, Side side = Side.Any)
     {
         Main main = FindFirstObjectByType<Main>();
-        var roadCells = GetRoadCellsForSpawn(main, side);
+        var roadCells = GetRoadCellsForSpawn(main, side, count);
 
         System.Random rnd = new System.Random();
         for (int i = 0; i < count; i++)
@@ -107,47 +107,54 @@ public class UnitSpawner : MonoBehaviour
         }
     }
 
-    private List<MoveCell> GetRoadCellsForSpawn(Main main, Side side)
+    private List<MoveCell> GetRoadCellsForSpawn(Main main, Side side, int requiredCount)
     {
-        List<MoveCell> result = new List<MoveCell>();
         int w = main.width;
         int h = main.height;
         int mh = main.mapHeight;
+        int borderDepth = 4;
+        int maxBorderDepth = Mathf.Max(w, h) / 2;
 
-        int centerX = w / 2;
-        int centerZ = h / 2;
-        int roadBorder = 3;
+        List<MoveCell> result = new List<MoveCell>();
 
-        for (int x = 0; x < w; x++)
+        while (borderDepth <= maxBorderDepth)
         {
-            for (int y = 0; y < mh; y++)
+            result.Clear();
+            for (int x = 0; x < w; x++)
             {
-                for (int z = 0; z < h; z++)
+                for (int y = 0; y < mh; y++)
                 {
-                    var cell = main.CellData[x, y, z];
-                    if (cell == null) continue;
-                    // Вот здесь важное изменение:
-                    // мы проверяем только на типы, которые считаем "дорогой"
-                    var allowedTypes = new[] { Main.CellType.Gray, Main.CellType.Brown, Main.CellType.StoneRoad };
-                    if ((!allowedTypes.Contains(cell.undertype)) || cell.OccupyingUnit != null)
-                        continue;
-
-                    bool fits = false;
-                    switch (side)
+                    for (int z = 0; z < h; z++)
                     {
-                        case Side.Top: fits = z >= h - roadBorder; break;
-                        case Side.Bottom: fits = z < roadBorder; break;
-                        case Side.Left: fits = x < roadBorder; break;
-                        case Side.Right: fits = x >= w - roadBorder; break;
-                        case Side.Any: fits = Mathf.Abs(x - centerX) <= roadBorder && Mathf.Abs(z - centerZ) <= roadBorder; break;
-                    }
-                    if (fits) result.Add(cell);
+                        var cell = main.CellData[x, y, z];
+                        if (cell == null) continue;
 
-                    if (fits && CellHasNeighbor(cell, main.CellData))
-                        result.Add(cell);
+                        var allowedTypes = new[] { Main.CellType.Gray, Main.CellType.Brown, Main.CellType.StoneRoad };
+                        if (!allowedTypes.Contains(cell.undertype) || cell.OccupyingUnit != null)
+                            continue;
+
+                        bool fits = false;
+                        switch (side)
+                        {
+                            case Side.Top: fits = z >= h - borderDepth; break;
+                            case Side.Bottom: fits = z < borderDepth; break;
+                            case Side.Left: fits = x < borderDepth; break;
+                            case Side.Right: fits = x >= w - borderDepth; break;
+                            case Side.Any: fits = true; break;
+                        }
+                        if (fits)
+                            result.Add(cell);
+                    }
                 }
             }
+
+            if (result.Count >= requiredCount)
+                break; // Хватило мест для спавна
+
+            borderDepth += 2; // Расширяем зону и пробуем снова
         }
+
+        // Если после расширения клеток всё равно мало — вернём все, что нашли (лучше, чем ничего)
         return result;
     }
 
