@@ -152,11 +152,13 @@ public class InitiativeManager : MonoBehaviour
         Debug.Log($"AI: ближайший игрок — {targetPlayer.UnitObject.name}");
 
         // Проверка: можно ли атаковать сразу?
-        int manhattanDist = Mathf.Abs(enemyUnit.CurrentCell.x - targetPlayer.CurrentCell.x)
-                          + Mathf.Abs(enemyUnit.CurrentCell.y - targetPlayer.CurrentCell.y)
-                          + Mathf.Abs(enemyUnit.CurrentCell.z - targetPlayer.CurrentCell.z);
+        int chebyshevDist = Mathf.Max(
+            Mathf.Abs(enemyUnit.CurrentCell.x - targetPlayer.CurrentCell.x),
+            Mathf.Abs(enemyUnit.CurrentCell.y - targetPlayer.CurrentCell.y),
+            Mathf.Abs(enemyUnit.CurrentCell.z - targetPlayer.CurrentCell.z)
+        );
 
-        if (manhattanDist <= enemyUnit.attackRange)
+        if (chebyshevDist <= enemyUnit.attackRange)
         {
             yield return new WaitForSeconds(0.3f);
             enemyUnit.Attack(targetPlayer);
@@ -214,11 +216,13 @@ public class InitiativeManager : MonoBehaviour
             Debug.LogWarning("AI: Нет UnitMover у врага!");
         }
 
-        manhattanDist = Mathf.Abs(enemyUnit.CurrentCell.x - targetPlayer.CurrentCell.x)
-                      + Mathf.Abs(enemyUnit.CurrentCell.y - targetPlayer.CurrentCell.y)
-                      + Mathf.Abs(enemyUnit.CurrentCell.z - targetPlayer.CurrentCell.z);
+        chebyshevDist = Mathf.Max(
+            Mathf.Abs(enemyUnit.CurrentCell.x - targetPlayer.CurrentCell.x),
+            Mathf.Abs(enemyUnit.CurrentCell.y - targetPlayer.CurrentCell.y),
+            Mathf.Abs(enemyUnit.CurrentCell.z - targetPlayer.CurrentCell.z)
+        );
 
-        if (manhattanDist <= enemyUnit.attackRange)
+        if (chebyshevDist <= enemyUnit.attackRange)
         {
             yield return new WaitForSeconds(0.3f);
             enemyUnit.Attack(targetPlayer);
